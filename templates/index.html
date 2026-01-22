@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STATAU - Advanced</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    
+    <style>
+        /* ... 之前的样式保留 ... */
+        body { background-color: #f4f6f9; min-height: 100vh; display: flex; flex-direction: column; }
+        .main-container { flex: 1; display: flex; overflow: hidden; height: 100vh; }
+        #sidebar { width: 250px; background-color: #2c3e50; color: white; padding-top: 20px; flex-shrink: 0; overflow-y: auto; }
+        .nav-link { color: #bdc3c7; cursor: pointer; padding: 15px 20px; }
+        .nav-link:hover, .nav-link.active { color: white; background-color: #1abc9c; }
+        .content-area { flex: 1; padding: 20px; overflow-y: auto; }
+        .var-list-container { border: 1px solid #ced4da; height: 150px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; }
+        
+        /* 表格特殊样式 */
+        .table-editable-container { text-align: center; margin-top: 20px; }
+        .table-title-input {
+            border: none; background: transparent; 
+            font-size: 1.2em; font-weight: bold; text-align: center; 
+            width: 80%; margin-bottom: 10px; border-bottom: 1px dashed #ccc;
+        }
+        .table-title-input:focus { outline: none; border-bottom: 1px solid #000; }
+        
+        .academic-table { 
+            border-collapse: collapse; margin: 0 auto; 
+            font-family: "Times New Roman", serif; font-size: 1.05em;
+            background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            min-width: 60%;
+        }
+        .academic-table td, .academic-table th { padding: 4px 12px; } /* 更紧凑 */
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <div id="sidebar">
+        <h4 class="text-center mb-4 fw-bold">STATAU</h4>
+        <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link active" onclick="selectMethod('ols')">线性OLS回归</a></li>
+            <li class="nav-item"><a class="nav-link" onclick="selectMethod('logit')">Logit 模型</a></li>
+            <!-- 其他模型省略 -->
+        </ul>
+    </div>
+
+    <div class="content-area">
+        <!-- 文件上传 -->
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                <span id="file-status" class="fw-bold text-primary">请先上传数据</span>
+                <input type="file" id="fileInput" class="form-control form-control-sm w-50" accept=".csv, .xlsx, .dta">
+            </div>
+        </div>
+
+        <!-- 变量面板 -->
+        <div id="setup-panel" class="card shadow-sm mb-4" style="display:none;">
+            <div class="card-header bg-white d-flex justify-content-between" onclick="togglePanel()">
+                <h5 class="m-0 text-primary" id="method-title">变量配置</h5>
+                <button class="btn btn-sm btn-light">折叠/展开</button>
+            </div>
+            <div class="card-body" id="config-body">
+                
+                <!-- 变量选择区 (保持不变) -->
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label>因变量 (Y) <span class="text-danger">*</span></label>
+                        <select id="y-var-select" class="form-select"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label>自变量 (X) - 列表选择</label>
+                        <div id="x-var-container" class="var-list-container"></div>
+                    </div>
+                    <div class="col-md-6">
+                        <label>控制变量 - 列表选择</label>
+                        <div id="c-var-container" class="var-list-container"></div>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="small text-muted">手动输入控制变量 (空格或逗号分隔)</label>
+                        <input type="text" id="manual-controls" class="form-control" placeholder="age gender gdp...">
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <!-- 导出选项 (恢复的部分!) -->
+                <div class="mb-3">
+                    <label class="fw-bold small mb-2">📊 结果表格导出内容 (Export Statistics):</label>
+                    <div class="d-flex flex-wrap gap-3 p-2 bg-light rounded border">
+                        <div class="form-check">
+                            <input class="form-check-input export-opt" type="checkbox" value="nobs" checked disabled>
+                            <label class="form-check-label">样本量 (N)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input export-opt" type="checkbox" value="r2" checked id="chk-r2">
+                            <label class="form-check-label" for="chk-r2">R² / Pseudo R²</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input export-opt" type="checkbox" value="adj_r2" checked id="chk-adj">
+                            <label class="form-check-label" for="chk-adj">Adj. R²</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input export-opt" type="checkbox" value="f_stat" checked id="chk-f">
+                            <label class="form-check-label" for="chk-f">F 统计量</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input export-opt" type="checkbox" value="aic" id="chk-aic">
+                            <label class="form-check-label" for="chk-aic">AIC</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input export-opt" type="checkbox" value="bic" id="chk-bic">
+                            <label class="form-check-label" for="chk-bic">BIC</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input export-opt" type="checkbox" value="ll" id="chk-ll">
+                            <label class="form-check-label" for="chk-ll">Log Likelihood</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 高级设置 (小数位等) -->
+                <div class="accordion mb-3" id="advAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed py-2 bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#advConfig">
+                                ⚙️ 格式高级设置 (小数位、标准误等)
+                            </button>
+                        </h2>
+                        <div id="advConfig" class="accordion-collapse collapse">
+                            <div class="accordion-body">
+                                <div class="row align-items-end">
+                                    <div class="col-md-3">
+                                        <label class="small">小数位数</label>
+                                        <input type="number" id="decimal-input" class="form-control form-control-sm" value="3" min="1" max="6">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="small d-block">括号内显示</label>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="se_opt" id="show_se" checked>
+                                            <label class="form-check-label small" for="show_se">标准误 (SE)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="se_opt" id="show_t">
+                                            <label class="form-check-label small" for="show_t">t 值</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="small">表格默认标题</label>
+                                        <input type="text" id="default-title" class="form-control form-control-sm" value="Regression Results">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary flex-grow-1 fw-bold" onclick="runAnalysis('new')">🆕 开始新分析 (覆盖)</button>
+                    <button class="btn btn-outline-success flex-grow-1 fw-bold" onclick="runAnalysis('append')">➕ 添加一列 (Append)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果展示 -->
+        <div id="result-container" style="display:none; padding-bottom: 50px;">
+            <div class="d-flex justify-content-center gap-3 mb-3">
+                <button class="btn btn-sm btn-outline-primary" onclick="togglePanel(true)">重新配置变量</button>
+                <button class="btn btn-sm btn-info text-white" onclick="showRaw()">查看最近一次回归详情</button>
+            </div>
+            <div id="table-output"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 详情模态框略，与之前相同 -->
+<div class="modal fade" id="rawModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-body"><pre id="raw-text"></pre></div></div></div></div>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script>
+    let currentFilename = "";
+    let currentMethod = "ols";
+    let columnNames = [];
+    let lastRawOutput = "";
+
+    // 文件上传部分保持不变...
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const fd = new FormData(); fd.append('file', e.target.files[0]);
+        fetch('/upload', {method:'POST', body:fd}).then(r=>r.json()).then(d=>{
+            currentFilename = d.filename; columnNames = d.columns;
+            document.getElementById('file-status').innerText = d.filename;
+            initUI();
+            document.getElementById('setup-panel').style.display = 'block';
+        });
+    });
+
+    function initUI() {
+        const ySel = document.getElementById('y-var-select');
+        const xCon = document.getElementById('x-var-container');
+        const cCon = document.getElementById('c-var-container');
+        ySel.innerHTML = ''; xCon.innerHTML = ''; cCon.innerHTML = '';
+        
+        columnNames.forEach(col => {
+            ySel.add(new Option(col, col));
+            xCon.innerHTML += `<div class="form-check"><input class="form-check-input x-box" type="checkbox" value="${col}"><label>${col}</label></div>`;
+            cCon.innerHTML += `<div class="form-check"><input class="form-check-input c-box" type="checkbox" value="${col}"><label>${col}</label></div>`;
+        });
+    }
+
+    // 运行分析
+    function runAnalysis(actionType) {
+        const yVar = document.getElementById('y-var-select').value;
+        const xVars = Array.from(document.querySelectorAll('.x-box:checked')).map(e=>e.value);
+        const cVars = Array.from(document.querySelectorAll('.c-box:checked')).map(e=>e.value);
+        const manual = document.getElementById('manual-controls').value;
+        
+        // 获取导出选项
+        const exportOpts = ['nobs']; // 默认必须有 N
+        document.querySelectorAll('.export-opt:checked').forEach(cb => {
+            if(cb.value !== 'nobs') exportOpts.push(cb.value);
+        });
+
+        const decimals = document.getElementById('decimal-input').value;
+        const showSe = document.getElementById('show_se').checked;
+        const tableTitle = document.getElementById('default-title').value;
+
+        // DEBUG: 打印一下当前的方法，防止跑错
+        console.log("Running method:", currentMethod);
+
+        fetch('/analyze', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                action: actionType,
+                filename: currentFilename,
+                method: currentMethod, // 关键：确保这里传的是正确的值
+                y_var: yVar,
+                x_vars: xVars.concat(cVars),
+                manual_controls: manual,
+                decimals: decimals,
+                show_se: showSe,
+                table_title: tableTitle,
+                export_options: exportOpts // 传递选项
+            })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.error) {
+                alert("分析错误: " + data.error);
+                // 如果出现 unit interval 错误，提示用户检查方法
+                if(data.error.includes("unit interval")) {
+                    alert("提示：检测到 Logit/Probit 模型错误。请确认您左侧导航栏选择的是 '线性OLS回归'，或者检查您的因变量是否为 0/1 变量。");
+                }
+            } else {
+                document.getElementById('table-output').innerHTML = data.html_table;
+                lastRawOutput = data.raw_output;
+                document.getElementById('result-container').style.display = 'block';
+                if(actionType === 'new') togglePanel(false);
+            }
+        });
+    }
+
+
+    function togglePanel(forceOpen) {
+        const b = document.getElementById('config-body');
+        if(forceOpen === true || b.style.display === 'none') b.style.display = 'block';
+        else b.style.display = 'none';
+    }
+    
+    // 左侧模型选择
+    // 确保点击左侧导航栏时，currentMethod 被正确更新
+    function selectMethod(m) { 
+        currentMethod = m; 
+        console.log("Method switched to:", currentMethod); // Debug
+        
+        // 更新 UI 高亮
+        document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // 更新标题
+        const names = {'ols': '线性OLS回归', 'logit': 'Logit 模型', 'probit': 'Probit 模型', 'fe': '固定效应'};
+        document.getElementById('method-title').innerText = names[m] + " - 变量配置";
+        
+        togglePanel(true); 
+    }
+
+    function showRaw() { 
+        document.getElementById('raw-text').innerText = lastRawOutput; 
+        new bootstrap.Modal(document.getElementById('rawModal')).show(); 
+    }
+</script>
+</body>
+</html>

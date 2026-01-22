@@ -1,0 +1,715 @@
+{% extends "base.html" %}
+
+{% block title %}首页{% endblock %}
+
+{% block styles %}
+<style>
+    /* ========== 全局样式 ========== */
+    .home-page {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: calc(100vh - 56px);
+    }
+    
+    /* ========== Hero 区域 ========== */
+    .hero-section {
+        position: relative;
+        padding: 80px 0 100px;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        opacity: 0.5;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .hero-title {
+        font-size: 4rem;
+        font-weight: 800;
+        color: white;
+        text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        letter-spacing: 3px;
+        margin-bottom: 20px;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.5rem;
+        color: rgba(255,255,255,0.95);
+        font-weight: 300;
+        margin-bottom: 15px;
+    }
+    
+    .hero-description {
+        font-size: 1.1rem;
+        color: rgba(255,255,255,0.85);
+        max-width: 600px;
+        margin: 0 auto 40px;
+        line-height: 1.8;
+    }
+    
+    /* 按钮样式 */
+    .btn-hero-primary {
+        background: white;
+        color: #667eea;
+        padding: 16px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-hero-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        color: #764ba2;
+    }
+    
+    .btn-hero-secondary {
+        background: transparent;
+        color: white;
+        padding: 15px 35px;
+        font-size: 1rem;
+        font-weight: 500;
+        border-radius: 50px;
+        border: 2px solid rgba(255,255,255,0.5);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-hero-secondary:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: white;
+        color: white;
+    }
+    
+    /* 统计数字展示 */
+    .stats-row {
+        margin-top: 60px;
+        padding-top: 40px;
+        border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    .stat-item {
+        text-align: center;
+        color: white;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        display: block;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* ========== 特性卡片区域 ========== */
+    .features-section {
+        background: #f8f9fa;
+        padding: 80px 0;
+        position: relative;
+    }
+    
+    .features-section::before {
+        content: '';
+        position: absolute;
+        top: -50px;
+        left: 0;
+        right: 0;
+        height: 100px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        clip-path: ellipse(70% 100% at 50% 0%);
+    }
+    
+    .section-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+    
+    .section-subtitle {
+        color: #6c757d;
+        font-size: 1.1rem;
+        margin-bottom: 50px;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px 30px;
+        height: 100%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        transition: all 0.4s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    }
+    
+    .feature-card:hover::before {
+        transform: scaleX(1);
+    }
+    
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        margin-bottom: 25px;
+        transition: all 0.3s ease;
+    }
+    
+    .feature-card:hover .feature-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+    
+    .icon-algorithm { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .icon-academic { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
+    .icon-cloud { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .icon-easy { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .icon-secure { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+    .icon-support { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+    
+    .feature-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 15px;
+    }
+    
+    .feature-desc {
+        color: #6c757d;
+        line-height: 1.7;
+        font-size: 0.95rem;
+    }
+    
+    /* ========== 支持的模型区域 ========== */
+    .models-section {
+        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+        padding: 80px 0;
+    }
+    
+    .model-badge {
+        display: inline-flex;
+        align-items: center;
+        background: white;
+        padding: 12px 24px;
+        border-radius: 50px;
+        margin: 8px;
+        font-weight: 500;
+        color: #495057;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        border: 1px solid #e9ecef;
+    }
+    
+    .model-badge:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+        border-color: #667eea;
+        color: #667eea;
+    }
+    
+    .model-badge i {
+        margin-right: 8px;
+        font-size: 1.1rem;
+    }
+    
+    /* ========== 工作流程区域 ========== */
+    .workflow-section {
+        background: #2c3e50;
+        padding: 80px 0;
+        color: white;
+    }
+    
+    .workflow-step {
+        text-align: center;
+        padding: 30px 20px;
+        position: relative;
+    }
+    
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0 auto 20px;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .step-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .step-desc {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.9rem;
+    }
+    
+    .workflow-arrow {
+        position: absolute;
+        right: -20px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 2rem;
+        color: rgba(255,255,255,0.3);
+    }
+    
+    /* ========== 关于区域 ========== */
+    .about-section {
+        background: white;
+        padding: 80px 0;
+    }
+    
+    .about-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 30px;
+        padding: 60px;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .about-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    }
+    
+    .about-title {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+    
+    .about-text {
+        font-size: 1.1rem;
+        line-height: 1.9;
+        opacity: 0.95;
+    }
+    
+    /* ========== CTA 区域 ========== */
+    .cta-section {
+        background: #f8f9fa;
+        padding: 60px 0;
+        text-align: center;
+    }
+    
+    .cta-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 20px;
+    }
+    
+    .cta-subtitle {
+        color: #6c757d;
+        margin-bottom: 30px;
+    }
+    
+    .btn-cta {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 16px 50px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        border: none;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cta:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        color: white;
+    }
+    
+    /* ========== Footer ========== */
+    .footer-section {
+        background: #1a252f;
+        padding: 40px 0;
+        color: rgba(255,255,255,0.6);
+        font-size: 0.9rem;
+    }
+    
+    .footer-section a {
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+        transition: color 0.3s;
+    }
+    
+    .footer-section a:hover {
+        color: #667eea;
+    }
+    
+    /* ========== 响应式调整 ========== */
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+        }
+        
+        .hero-description {
+            font-size: 1rem;
+        }
+        
+        .btn-hero-primary, .btn-hero-secondary {
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+        }
+        
+        .workflow-arrow {
+            display: none;
+        }
+        
+        .about-card {
+            padding: 40px 25px;
+        }
+    }
+    
+    /* ========== 动画效果 ========== */
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .floating {
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+    
+    .pulse {
+        animation: pulse 2s ease-in-out infinite;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="home-page">
+    <!-- Hero 区域 -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-content text-center">
+                <h1 class="hero-title floating">STATAU</h1>
+                <p class="hero-subtitle">基于 Stata 算法的在线经济学实证分析平台</p>
+                <p class="hero-description">
+                    无需编程，无需安装软件，一键生成 AER/QJE 标准的学术回归表格。
+                    让研究者专注于经济学思想，而非繁琐的代码实现。
+                </p>
+                
+                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                    {% if current_user.is_authenticated %}
+                        <a href="/analysis" class="btn btn-hero-primary">
+                            <i class="bi bi-graph-up me-2"></i>进入数据分析工作台
+                        </a>
+                    {% else %}
+                        <button class="btn btn-hero-primary" data-bs-toggle="modal" data-bs-target="#authModal">
+                            <i class="bi bi-rocket-takeoff me-2"></i>立即开始使用
+                        </button>
+                        <a href="/help" class="btn btn-hero-secondary">
+                            <i class="bi bi-book me-2"></i>查看帮助文档
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <!-- 统计数字 -->
+                <div class="row stats-row">
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <span class="stat-number">6+</span>
+                            <span class="stat-label">回归模型</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <span class="stat-number">100%</span>
+                            <span class="stat-label">Stata 精度</span>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <span class="stat-number">0</span>
+                            <span class="stat-label">代码编写</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 特性卡片区域 -->
+    <section class="features-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title">为什么选择 STATAU？</h2>
+                <p class="section-subtitle">专为经济学研究者打造的云端计量分析工具</p>
+            </div>
+            
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon icon-algorithm">
+                            <i class="bi bi-cpu text-white"></i>
+                        </div>
+                        <h3 class="feature-title">算法精确可靠</h3>
+                        <p class="feature-desc">
+                            后端基于 Python Statsmodels 与 Linearmodels 库，完美复刻 Stata 计算逻辑，
+                            回归系数、标准误、统计量与 Stata 输出完全一致。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon icon-academic">
+                            <i class="bi bi-journal-richtext text-white"></i>
+                        </div>
+                        <h3 class="feature-title">学术标准输出</h3>
+                        <p class="feature-desc">
+                            自动生成 esttab 风格的 HTML 表格，支持多列结果合并、显著性星号标注，
+                            直接复制即可用于顶刊论文发表。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon icon-cloud">
+                            <i class="bi bi-cloud-check text-white"></i>
+                        </div>
+                        <h3 class="feature-title">云端即时计算</h3>
+                        <p class="feature-desc">
+                            无需安装庞大的 Stata 软件，无需配置复杂的编程环境，
+                            随时随地打开浏览器即可开始实证研究。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon icon-easy">
+                            <i class="bi bi-hand-index-thumb text-white"></i>
+                        </div>
+                        <h3 class="feature-title">零代码操作</h3>
+                        <p class="feature-desc">
+                            直观的可视化界面，通过点选即可完成变量配置、模型选择、
+                            标准误设置等全部操作，大幅降低学习成本。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon icon-secure">
+                            <i class="bi bi-shield-check text-white"></i>
+                        </div>
+                        <h3 class="feature-title">数据安全保障</h3>
+                        <p class="feature-desc">
+                            您的数据仅用于即时计算，不会被存储或用于其他用途。
+                            支持 CSV、Excel、Stata DTA 等多种格式。
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <div class="feature-card">
+                        <div class="feature-icon icon-support">
+                            <i class="bi bi-headset text-dark"></i>
+                        </div>
+                        <h3 class="feature-title">持续更新支持</h3>
+                        <p class="feature-desc">
+                            我们持续添加新的计量模型和功能，包括中介效应、异质性分析等，
+                            满足您不断增长的研究需求。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 支持的模型区域 -->
+    <section class="models-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title">支持的分析方法</h2>
+                <p class="section-subtitle">涵盖经济学实证研究常用的计量模型</p>
+            </div>
+            
+            <div class="text-center">
+                <span class="model-badge"><i class="bi bi-graph-up-arrow"></i>OLS 线性回归</span>
+                <span class="model-badge"><i class="bi bi-layers"></i>固定效应模型</span>
+                <span class="model-badge"><i class="bi bi-toggle-on"></i>Logit 模型</span>
+                <span class="model-badge"><i class="bi bi-toggle2-on"></i>Probit 模型</span>
+                <span class="model-badge"><i class="bi bi-bar-chart-steps"></i>描述性统计</span>
+                <span class="model-badge"><i class="bi bi-link-45deg"></i>相关性分析</span>
+                <span class="model-badge"><i class="bi bi-exclamation-triangle"></i>VIF 共线性检验</span>
+                <span class="model-badge"><i class="bi bi-diagram-3"></i>中介效应模型</span>
+                <span class="model-badge"><i class="bi bi-people"></i>异质性分析</span>
+                <span class="model-badge pulse"><i class="bi bi-plus-circle"></i>更多模型开发中...</span>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 工作流程区域 -->
+    <section class="workflow-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="section-title" style="color: white;">简单四步，完成分析</h2>
+                <p class="section-subtitle" style="color: rgba(255,255,255,0.7);">从数据上传到论文表格，一气呵成</p>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="workflow-step">
+                        <div class="step-number">1</div>
+                        <h4 class="step-title">上传数据</h4>
+                        <p class="step-desc">支持 CSV、Excel、Stata DTA 格式</p>
+                        <span class="workflow-arrow d-none d-md-block"><i class="bi bi-arrow-right"></i></span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="workflow-step">
+                        <div class="step-number">2</div>
+                        <h4 class="step-title">配置变量</h4>
+                        <p class="step-desc">选择因变量、自变量和控制变量</p>
+                        <span class="workflow-arrow d-none d-md-block"><i class="bi bi-arrow-right"></i></span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="workflow-step">
+                        <div class="step-number">3</div>
+                        <h4 class="step-title">选择模型</h4>
+                        <p class="step-desc">OLS、固定效应、Logit 等</p>
+                        <span class="workflow-arrow d-none d-md-block"><i class="bi bi-arrow-right"></i></span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="workflow-step">
+                        <div class="step-number">4</div>
+                        <h4 class="step-title">导出结果</h4>
+                        <p class="step-desc">获得学术标准的回归表格</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- 关于区域 -->
+    <section class="about-section">
+        <div class="container">
+            <div class="about-card">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h2 class="about-title"><i class="bi bi-info-circle me-2"></i>关于 STATAU</h2>
+                        <p class="about-text">
+                            STATAU 致力于降低实证研究的门槛。我们深知，对于许多经济学研究者而言，
+                            掌握 Stata 等统计软件的使用需要投入大量时间和精力。STATAU 的目标是让研究者
+                            能够专注于经济学思想本身，而非繁琐的代码实现和软件操作。
+                            <br><br>
+                            我们提供常用的计量经济学模型，包括 OLS、Logit、Probit、固定效应模型以及
+                            中介效应模型等。通过简洁直观的交互界面，即使是编程零基础的用户也能快速上手，
+                            生成符合学术规范的回归结果表格。
+                        </p>
+                    </div>
+                    <div class="col-lg-4 text-center mt-4 mt-lg-0">
+                        <div class="floating">
+                            <i class="bi bi-bar-chart-line" style="font-size: 8rem; opacity: 0.3;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- CTA 区域 -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">准备好开始您的研究了吗？</h2>
+            <p class="cta-subtitle">免费注册，立即体验云端计量分析的便捷</p>
+            {% if current_user.is_authenticated %}
+                <a href="/analysis" class="btn btn-cta">
+                    <i class="bi bi-arrow-right-circle me-2"></i>进入工作台
+                </a>
+            {% else %}
+                <button class="btn btn-cta" data-bs-toggle="modal" data-bs-target="#authModal">
+                    <i class="bi bi-person-plus me-2"></i>免费注册
+                </button>
+            {% endif %}
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="footer-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="mb-0">© 2024 STATAU. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <a href="/help" class="me-3">帮助文档</a>
+                    <a href="#">联系我们</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock %}

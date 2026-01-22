@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}帮助手册{% endblock %}
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4 border-bottom pb-2">STATAU 使用指南</h2>
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group sticky-top" style="top: 80px;">
+                <a href="#step1" class="list-group-item list-group-item-action">1. 数据准备</a>
+                <a href="#step2" class="list-group-item list-group-item-action">2. 上传与识别</a>
+                <a href="#step3" class="list-group-item list-group-item-action">3. 回归分析</a>
+                <a href="#step4" class="list-group-item list-group-item-action">4. 结果导出</a>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <h4 id="step1">1. 数据准备</h4>
+            <p>请确保您的数据是标准的二维表格格式。第一行必须是变量名（建议使用英文变量名，避免乱码）。</p>
+            <ul>
+                <li>支持格式：<code>.csv</code>, <code>.xlsx</code>, <code>.dta</code> (Stata 14及以下版本最佳)</li>
+                <li>注意：请尽量剔除中文特殊字符。</li>
+            </ul>
+            <hr>
+            <h4 id="step2">2. 上传与识别</h4>
+            <p>进入“数据分析”页面，点击上传按钮。系统会自动读取您的所有变量名。上传成功后，绿色字样会显示当前文件名。</p>
+            <hr>
+            <h4 id="step3">3. 回归分析</h4>
+            <p>在左侧导航栏选择模型（如OLS），然后在右侧面板勾选因变量和自变量。</p>
+            <p><strong>技巧：</strong> 您可以在“手动输入控制变量”框中直接粘贴多个变量名（用空格隔开），这比一个个勾选要快。</p>
+            <hr>
+            <h4 id="step4">4. 结果导出</h4>
+            <p>点击“开始分析”后，下方会生成 HTML 表格。您可以直接选中表格内容，复制并粘贴到 Word 文档中。格式会自动保持为标准的“三线表”。</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

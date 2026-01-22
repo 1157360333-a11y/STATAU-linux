@@ -1,0 +1,400 @@
+[2026-01-21 06:26:06 +0000] [158311] [INFO] Starting gunicorn 23.0.0
+[2026-01-21 06:26:06 +0000] [158311] [INFO] Listening at: http://0.0.0.0:8000 (158311)
+[2026-01-21 06:26:06 +0000] [158311] [INFO] Using worker: sync
+[2026-01-21 06:26:06 +0000] [158312] [INFO] Booting worker with pid: 158312
+[2026-01-21 06:26:06 +0000] [158313] [INFO] Booting worker with pid: 158313
+[2026-01-21 06:26:06 +0000] [158314] [INFO] Booting worker with pid: 158314
+[2026-01-21 06:26:06 +0000] [158315] [INFO] Booting worker with pid: 158315
+[2026-01-21 06:26:07 +0000] [158316] [INFO] Booting worker with pid: 158316
+[2026-01-21 06:26:07 +0000] [158317] [INFO] Booting worker with pid: 158317
+[2026-01-21 06:26:07 +0000] [158318] [INFO] Booting worker with pid: 158318
+[2026-01-21 06:26:07 +0000] [158319] [INFO] Booting worker with pid: 158319
+[2026-01-21 06:26:07 +0000] [158320] [INFO] Booting worker with pid: 158320
+[2026-01-21 06:27:03 +0000] [158319] [INFO] Worker exiting (pid: 158319)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158319 已退出
+[2026-01-21 06:27:03 +0000] [158312] [INFO] Worker exiting (pid: 158312)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158312 已退出
+[2026-01-21 06:27:03 +0000] [158315] [INFO] Worker exiting (pid: 158315)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158315 已退出
+[2026-01-21 06:27:03 +0000] [158317] [INFO] Worker exiting (pid: 158317)
+[2026-01-21 06:27:03 +0000] [158313] [INFO] Worker exiting (pid: 158313)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158317 已退出
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158313 已退出
+[2026-01-21 06:27:03 +0000] [158320] [INFO] Worker exiting (pid: 158320)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158320 已退出
+[2026-01-21 06:27:03 +0000] [158314] [INFO] Worker exiting (pid: 158314)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158314 已退出
+[2026-01-21 06:27:03 +0000] [158316] [INFO] Worker exiting (pid: 158316)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158316 已退出
+[2026-01-21 06:27:03 +0000] [158318] [INFO] Worker exiting (pid: 158318)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158318 已退出
+[2026-01-21 06:27:03 +0000] [158311] [INFO] Handling signal: term
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158312) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158319) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158320) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158318) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158315) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158316) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158317) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158314) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [ERROR] Worker (pid:158313) was sent SIGTERM!
+[2026-01-21 06:27:03 +0000] [158311] [INFO] Shutting down: Master
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[2026-01-21 06:27:04 +0000] [158459] [INFO] Starting gunicorn 23.0.0
+[2026-01-21 06:27:04 +0000] [158459] [INFO] Listening at: http://0.0.0.0:8000 (158459)
+[2026-01-21 06:27:04 +0000] [158459] [INFO] Using worker: sync
+[2026-01-21 06:27:04 +0000] [158460] [INFO] Booting worker with pid: 158460
+[2026-01-21 06:27:04 +0000] [158461] [INFO] Booting worker with pid: 158461
+[2026-01-21 06:27:04 +0000] [158462] [INFO] Booting worker with pid: 158462
+[2026-01-21 06:27:04 +0000] [158463] [INFO] Booting worker with pid: 158463
+[2026-01-21 06:27:04 +0000] [158464] [INFO] Booting worker with pid: 158464
+[2026-01-21 06:27:04 +0000] [158465] [INFO] Booting worker with pid: 158465
+[2026-01-21 06:27:04 +0000] [158466] [INFO] Booting worker with pid: 158466
+[2026-01-21 06:27:04 +0000] [158467] [INFO] Booting worker with pid: 158467
+[2026-01-21 06:27:04 +0000] [158468] [INFO] Booting worker with pid: 158468
+[2026-01-21 10:15:37 +0000] [158466] [WARNING] Invalid request from ip=127.0.0.1: limit request headers fields size
+[2026-01-22 03:46:22 +0000] [158461] [INFO] Worker exiting (pid: 158461)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158461 已退出
+[2026-01-22 03:46:22 +0000] [158460] [INFO] Worker exiting (pid: 158460)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158460 已退出
+[2026-01-22 03:46:22 +0000] [158466] [INFO] Worker exiting (pid: 158466)
+[2026-01-22 03:46:22 +0000] [158462] [INFO] Worker exiting (pid: 158462)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158466 已退出
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158462 已退出
+[2026-01-22 03:46:22 +0000] [158463] [INFO] Worker exiting (pid: 158463)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158463 已退出
+[2026-01-22 03:46:22 +0000] [158467] [INFO] Worker exiting (pid: 158467)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+[FileService] 文件已保存: /var/www/STATAU/uploads/final_data_processed.dta
+Worker 158467 已退出
+[2026-01-22 03:46:22 +0000] [158465] [INFO] Worker exiting (pid: 158465)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158465 已退出
+[2026-01-22 03:46:22 +0000] [158464] [INFO] Worker exiting (pid: 158464)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158464 已退出
+[2026-01-22 03:46:22 +0000] [158459] [INFO] Handling signal: term
+[2026-01-22 03:46:22 +0000] [158459] [ERROR] Worker (pid:158462) was sent SIGTERM!
+[2026-01-22 03:46:22 +0000] [158468] [INFO] Worker exiting (pid: 158468)
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[app.py] 已加载配置: ProductionConfig
+[extensions.py] 数据库表已创建/更新
+[blueprints] 已注册: pages_bp (页面路由)
+[blueprints] 已注册: auth_bp (用户认证, 前缀: /api)
+[blueprints] 已注册: analysis_bp (数据分析)
+[blueprints] 已注册: admin_bp (管理后台, 前缀: /admin)
+[app.py] Flask 应用创建完成
+Worker 158468 已退出
+[2026-01-22 03:46:22 +0000] [158459] [ERROR] Worker (pid:158460) was sent SIGTERM!
+[2026-01-22 03:46:22 +0000] [158459] [ERROR] Worker (pid:158467) was sent SIGTERM!
+[2026-01-22 03:46:22 +0000] [158459] [ERROR] Worker (pid:158465) was sent SIGTERM!
+[2026-01-22 03:46:22 +0000] [158459] [ERROR] Worker (pid:158464) was sent SIGTERM!
+[2026-01-22 03:46:22 +0000] [158459] [ERROR] Worker (pid:158463) was sent SIGTERM!
+[2026-01-22 03:46:22 +0000] [158459] [ERROR] Worker (pid:158466) was sent SIGTERM!
+[2026-01-22 03:46:22 +0000] [158459] [INFO] Shutting down: Master
+============================================================
+STATAU Gunicorn 服务器正在启动...
+绑定地址: 0.0.0.0:8000
+Worker 数量: 9
+超时时间: 120秒
+访问日志: logs/gunicorn_access.log
+错误日志: logs/gunicorn_error.log
+日志级别: info
+============================================================
+[2026-01-22 03:46:23 +0000] [199780] [INFO] Starting gunicorn 23.0.0
+[2026-01-22 03:46:23 +0000] [199780] [INFO] Listening at: http://0.0.0.0:8000 (199780)
+[2026-01-22 03:46:23 +0000] [199780] [INFO] Using worker: sync
+[2026-01-22 03:46:23 +0000] [199784] [INFO] Booting worker with pid: 199784
+[2026-01-22 03:46:23 +0000] [199785] [INFO] Booting worker with pid: 199785
+[2026-01-22 03:46:23 +0000] [199786] [INFO] Booting worker with pid: 199786
+[2026-01-22 03:46:23 +0000] [199787] [INFO] Booting worker with pid: 199787
+[2026-01-22 03:46:23 +0000] [199788] [INFO] Booting worker with pid: 199788
+[2026-01-22 03:46:23 +0000] [199789] [INFO] Booting worker with pid: 199789
+[2026-01-22 03:46:23 +0000] [199790] [INFO] Booting worker with pid: 199790
+[2026-01-22 03:46:23 +0000] [199791] [INFO] Booting worker with pid: 199791
+[2026-01-22 03:46:23 +0000] [199792] [INFO] Booting worker with pid: 199792

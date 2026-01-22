@@ -1,0 +1,884 @@
+{% extends "base.html" %}
+
+{% block title %}数据分析{% endblock %}
+
+{% block styles %}
+<style>
+    /* 分析页面全局布局 */
+    .analysis-container { display: flex !important; flex-direction: row !important; height: calc(100vh - 56px); width: 100%; overflow: hidden; }
+    
+    /* 左侧导航栏 */
+    #sidebar { width: 250px; background-color: #2c3e50; color: white; padding-top: 20px; overflow-y: auto; flex-shrink: 0; border-right: 1px solid #1a252f; }
+    .nav-link-sidebar { color: #bdc3c7; cursor: pointer; padding: 12px 20px; display: block; text-decoration: none; transition: 0.2s;}
+    .nav-link-sidebar:hover, .nav-link-sidebar.active { color: white; background-color: #34495e; border-left: 4px solid #1abc9c; }
+    .sidebar-header { font-size: 0.85rem; font-weight: bold; color: #6c757d; padding: 10px 20px 5px 20px; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* 右侧内容区 */
+    .content-area { flex: 1; padding: 20px; height: 100%; overflow-y: auto; background-color: #f4f6f9; position: relative; }
+    
+    /* 变量列表容器 */
+    .var-list-container { border: 1px solid #ced4da; height: 160px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; }
+    
+    /* 表格样式 */
+    .table-editable-container { text-align: center; margin-top: 20px; overflow-x: auto; }
+    .table-title-input { border: none; background: transparent; font-size: 1.2em; font-weight: bold; text-align: center; width: 80%; border-bottom: 1px dashed #ccc; }
+    .table-title-input:focus { outline: none; border-bottom: 1px solid #000; }
+    
+    /* 学术表格基础样式 */
+    .academic-table { border-collapse: collapse; margin: 0 auto; font-family: "Times New Roman", serif; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-width: 50%; }
+    .academic-table td, .academic-table th { padding: 6px 12px; white-space: nowrap; }
+    
+    /* Loading 样式 */
+    .spinner-border-sm { width: 1rem; height: 1rem; border-width: 0.15em; }
+
+    /* 自定义行样式 */
+    .custom-row-item { display: flex; gap: 5px; margin-bottom: 5px; }
+
+    /* 预览模态框样式 */
+    #previewModal .modal-body { max-height: 70vh; overflow-y: auto; }
+    #previewModal .table td, #previewModal .table th { white-space: nowrap; }
+
+    /* 工具类：用于JS控制显隐 */
+    .d-none-custom { display: none !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analysis-container">
+    <!-- 左侧导航 -->
+    <div id="sidebar">
+        <!-- 新增功能区 -->
+        <div class="sidebar-header">基础分析</div>
+        <a class="nav-link-sidebar" onclick="selectMethod('desc')">📊 描述性统计</a>
+        <a class="nav-link-sidebar" onclick="selectMethod('corr')">🔗 相关性分析</a>
+        <a class="nav-link-sidebar" onclick="selectMethod('vif')">⚠️ VIF 共线性检验</a>
+
+        <hr style="border-color: #4b5d6b; margin: 10px 0;">
+
+        <!-- 原有回归区 -->
+        <div class="sidebar-header">回归模型</div>
+        <a class="nav-link-sidebar active" onclick="selectMethod('ols')">📈 线性 OLS 回归</a>
+        <a class="nav-link-sidebar" onclick="selectMethod('fe')">🏗️ 固定效应模型</a>
+        <a class="nav-link-sidebar" onclick="selectMethod('logit')">🟢 Logit 模型</a>
+        <a class="nav-link-sidebar" onclick="selectMethod('probit')">🔵 Probit 模型</a>
+        <!-- 保留其他入口 -->
+        <a class="nav-link-sidebar" onclick="selectMethod('hetero')">异质性分析</a>
+        <a class="nav-link-sidebar" onclick="selectMethod('mediation')">中介效应模型</a>
+
+        <hr style="border-color: #4b5d6b; margin: 10px 0;">
+
+        <!-- 新增：模型检验区 -->
+        <div class="sidebar-header">模型检验</div>
+        <a class="nav-link-sidebar" onclick="selectMethod('f_test')">🔬 F检验 (FE vs Pooled)</a>
+        <a class="nav-link-sidebar" onclick="selectMethod('hausman')">🧪 Hausman检验 (FE vs RE)</a>
+    </div>
+
+        <!-- 右侧内容 -->
+        <div class="content-area">
+            {% if not current_user.is_authenticated %}
+            <div class="alert alert-warning text-center py-2 mb-3"><small>⚠️ 游客模式下无法保存历史记录。</small></div>
+            {% endif %}
+
+        <!-- 文件上传 (完全保留原功能：预览按钮 + Loading) -->
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body py-2 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <span id="file-status" class="fw-bold text-primary me-2"><i class="bi bi-upload"></i> 请先上传数据</span>
+                    <div id="upload-loading" class="spinner-border spinner-border-sm text-primary" style="display:none;"></div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <!-- 预览按钮：必须保留 -->
+                    <button id="btn-preview" class="btn btn-sm btn-outline-primary" style="display:none;" onclick="previewData()">预览数据</button>
+                    <input type="file" id="fileInput" class="form-control form-control-sm" style="width: auto;" accept=".csv, .xlsx, .dta">
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置面板 -->
+        <div id="setup-panel" class="card shadow-sm mb-4" style="display:none;">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center" onclick="togglePanel()">
+                <h6 class="m-0 text-primary fw-bold" id="method-title">变量配置</h6>
+                <button class="btn btn-sm btn-light" onclick="togglePanel(); event.stopPropagation();">折叠/展开</button>
+            </div>
+            <div class="card-body" id="config-body" style="display: block;">
+                
+                <!-- ================== 区域 1: 变量选择 (分为 回归模式 和 简单模式) ================== -->
+                
+                <!-- 1.A 回归模式变量选择 (Y, X, Control) - 原有布局 -->
+                <div id="group-vars-regression">
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="small fw-bold">因变量 (Y) <span class="text-danger">*</span></label>
+                            <select id="y-var-select" class="form-select form-select-sm"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold">自变量 (X)</label>
+                            <div id="x-var-container" class="var-list-container"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="small fw-bold">控制变量</label>
+                            <div id="c-var-container" class="var-list-container"></div>
+                        </div>
+                        <div class="col-md-12">
+                            <input type="text" id="manual-controls" class="form-control form-control-sm" placeholder="手动输入控制变量 (空格分隔)...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1.B [新增] 简单模式变量选择 (用于 描述/相关/VIF) -->
+                <div id="group-vars-simple" class="d-none-custom">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="small fw-bold">请选择分析变量 (多选) <span class="text-danger">*</span></label>
+                            <div id="simple-var-container" class="var-list-container" style="height: 200px;">
+                                <!-- 动态填充 -->
+                            </div>
+                            <small class="text-muted">此处不区分因变量和自变量。</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================== 区域 2: 模型特定设置 ================== -->
+
+                <!-- 2.A 面板与固定效应 (仅 FE 显示) - 原有布局 -->
+                <div id="fe-specific-settings" class="mt-3 p-3 bg-light rounded border" style="display:none;">
+                    <h6 class="fw-bold small text-primary"><i class="bi bi-layers"></i> 面板结构与固定效应设置</h6>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="small fw-bold">个体ID (Entity) <span class="text-danger">*</span></label>
+                            <select id="fe-entity-select" class="form-select form-select-sm"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small fw-bold">时间ID (Time) <span class="text-danger">*</span></label>
+                            <select id="fe-time-select" class="form-select form-select-sm"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="small fw-bold">选择要固定的变量 (多选)</label>
+                            <div id="fe-vars-container" class="var-list-container" style="height: 100px;"></div>
+                            <small class="text-muted" style="font-size:0.7em">勾选需要固定的维度(如Industry, Year)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2.C Hausman检验特定设置 (仅 hausman 显示) -->
+                <div id="hausman-specific-settings" class="mt-3 p-3 bg-light rounded border" style="display:none;">
+                    <h6 class="fw-bold small text-primary"><i class="bi bi-gear"></i> Hausman检验选项</h6>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="sigmamore-checkbox">
+                        <label class="form-check-label" for="sigmamore-checkbox">
+                            <strong>使用sigmamore选项</strong> (基于随机效应统一方差估计)
+                        </label>
+                        <div class="form-text small">
+                            启用此选项可以解决协方差矩阵不正定的问题，得到与Stata一致的检验结果。
+                            <br>不启用时使用原始协方差矩阵，可能遇到"V_b-V_B is not positive definite"警告。
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <!-- 2.D 标准误 & 自定义行 (仅回归显示) -->
+                <div id="group-se-custom" class="row g-3">
+                    <div class="col-md-6">
+                        <label class="small fw-bold">标准误计算方式 (Cluster/Robust)</label>
+                        <select id="se-type-select" class="form-select form-select-sm mb-2" onchange="toggleClusterVar()">
+                            <option value="iid">普通标准误 (IID)</option>
+                            <option value="robust">稳健标准误 (Robust)</option>
+                            <option value="cluster">聚类标准误 (Cluster)</option>
+                        </select>
+                        <div id="cluster-var-box" style="display:none;">
+                            <label class="small text-muted">聚类变量 (Cluster Variable)</label>
+                            <select id="cluster-var-select" class="form-select form-select-sm"></select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold">自定义表格底行 (Custom Rows)</label>
+                        <div id="custom-rows-container"></div>
+                        <button class="btn btn-outline-secondary btn-sm w-100 mt-2" onclick="addCustomRow()">+ 添加 (如 Industry FE: Yes)</button>
+                    </div>
+                </div>
+                
+                <!-- 分隔线：仅在回归模式显示 -->
+                <hr class="my-3" id="hr-se-custom">
+
+                <!-- ================== 区域 3: 导出与格式 (完全保留) ================== -->
+
+                <!-- 3.A 导出统计量 (根据模式切换显示内容) -->
+                <div class="mb-2">
+                    <label class="small fw-bold">导出统计量 (Statistics):</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        <!-- 通用 -->
+                        <div class="form-check"><input class="form-check-input export-opt" type="checkbox" value="nobs" checked disabled><label>N / Count</label></div>
+                        
+                        <!-- 回归专用组 -->
+                        <span id="stats-group-regression" class="d-flex gap-2">
+                            <div class="form-check"><input class="form-check-input export-opt" type="checkbox" value="r2" checked id="chk-r2"><label for="chk-r2">R²</label></div>
+                            <div class="form-check"><input class="form-check-input export-opt" type="checkbox" value="adj_r2" checked id="chk-adj"><label for="chk-adj">Adj-R²</label></div>
+                            <div class="form-check"><input class="form-check-input export-opt" type="checkbox" value="f_stat" checked id="chk-f"><label for="chk-f">F-stat</label></div>
+                            <div class="form-check"><input class="form-check-input export-opt" type="checkbox" value="aic" id="chk-aic"><label for="chk-aic">AIC</label></div>
+                            <div class="form-check"><input class="form-check-input export-opt" type="checkbox" value="bic" id="chk-bic"><label for="chk-bic">BIC</label></div>
+                            <div class="form-check"><input class="form-check-input export-opt" type="checkbox" value="ll" id="chk-ll"><label for="chk-ll">Log Likelihood</label></div>
+                        </span>
+
+                        <!-- 描述统计专用组 (默认隐藏) -->
+                        <span id="stats-group-desc" class="d-none-custom gap-2">
+                            <div class="form-check"><input class="form-check-input desc-opt" type="checkbox" value="mean" checked><label>Mean</label></div>
+                            <div class="form-check"><input class="form-check-input desc-opt" type="checkbox" value="std" checked><label>Std.Dev</label></div>
+                            <div class="form-check"><input class="form-check-input desc-opt" type="checkbox" value="min" checked><label>Min</label></div>
+                            <div class="form-check"><input class="form-check-input desc-opt" type="checkbox" value="max" checked><label>Max</label></div>
+                            <div class="form-check"><input class="form-check-input desc-opt" type="checkbox" value="p50"><label>Median</label></div>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 3.B 高级格式设置 (Accordion) - 完全保留 -->
+                <div class="accordion mb-3" id="advAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed py-2 bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#advConfig">
+                                ⚙️ 格式高级配置 (小数位、括号内容、标题)
+                            </button>
+                        </h2>
+                        <div id="advConfig" class="accordion-collapse collapse">
+                            <div class="accordion-body py-2">
+                                <div class="row align-items-center">
+                                    <div class="col-md-3">
+                                        <label class="small">数值小数位</label>
+                                        <input type="number" id="decimal-input" class="form-control form-control-sm" value="3" min="1" max="6">
+                                    </div>
+                                    
+                                    <!-- 括号内容选择 (仅回归有效，但在描述统计时不影响) -->
+                                    <div class="col-md-4" id="adv-se-toggle">
+                                        <label class="small d-block">括号内显示内容 (仅回归)</label>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="se_opt" id="show_se" checked>
+                                            <label class="form-check-label small" for="show_se">标准误 (SE)</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="se_opt" id="show_t">
+                                            <label class="form-check-label small" for="show_t">t值 / z值</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-5">
+                                        <label class="small">表格标题</label>
+                                        <input type="text" id="default-title" class="form-control form-control-sm" value="Results">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 运行按钮 -->
+                <div class="d-flex gap-2 mt-3">
+                    <button class="btn btn-primary btn-sm flex-grow-1" id="btn-run-new" onclick="runAnalysis('new')">
+                        <span class="spinner-border spinner-border-sm d-none"></span> <span class="btn-text">开始新分析</span>
+                    </button>
+                    <!-- 追加按钮：仅回归模式显示 -->
+                    <button class="btn btn-success btn-sm flex-grow-1" id="btn-run-append" onclick="runAnalysis('append')">
+                        <span class="spinner-border spinner-border-sm d-none"></span> <span class="btn-text">追加到当前表</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果展示 -->
+        <div id="result-container" style="display:none; padding-bottom: 50px;">
+            <div class="d-flex justify-content-center gap-3 mb-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="togglePanel(true)">重新配置</button>
+                <!-- 原始结果查看：描述统计模式下隐藏 -->
+                <button class="btn btn-sm btn-info text-white" id="btn-show-raw" onclick="showRaw()">查看原始输出</button>
+            </div>
+            <div id="table-output"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 原始回归结果模态框 -->
+<div class="modal fade" id="rawModal"><div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">原始回归结果</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><pre id="raw-text" class="bg-light p-3"></pre></div></div></div></div>
+
+<!-- 数据预览模态框 (完全保留) -->
+<div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">数据预览 (前10行)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 动态填充 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 辅助函数：HTML转义
+    function escapeHtml(str) {
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#x27;', '/': '&#x2F;' };
+        return String(str).replace(/[&<>"'/]/g, (c) => map[c]);
+    }
+
+    // 单元格格式化函数（按新规则）
+    function formatCell(value, dtype) {
+        if (value === null || value === undefined) return '';
+        // 浮点数类型（float64, float32, ...）
+        if (dtype.startsWith('float')) {
+            let num = Number(value);
+            if (isNaN(num)) return String(value);
+            if (Math.abs(num) >= 1e6 || (Math.abs(num) <= 1e-4 && num !== 0)) {
+                return num.toExponential(2);
+            } else {
+                return num.toFixed(2);
+            }
+        } else if (dtype.startsWith('int') || dtype.startsWith('uint')) {
+            // 整数类型
+            let num = Number(value);
+            if (isNaN(num)) return String(value);
+            if (Math.abs(num) >= 1e8) {
+                return num.toExponential(2);
+            } else {
+                return num.toString();
+            }
+        } else if (dtype === 'object' || dtype === 'string' || dtype === 'category') {
+            // 字符串类型
+            let str = String(value);
+            if (str.length > 5) {
+                return '#'.repeat(5);
+            } else {
+                return str;
+            }
+        } else {
+            // 其他类型（bool, datetime等）
+            return String(value);
+        }
+    }
+    
+    // 全局变量
+    let currentFilename = "";
+    let currentMethod = "ols";
+    let columnNames = [];
+    let lastRawOutput = "";
+
+    // 文件上传监听
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const formData = new FormData(); formData.append('file', file);
+        
+        const statusSpan = document.getElementById('file-status');
+        const loader = document.getElementById('upload-loading');
+        
+        statusSpan.innerText = "正在上传解析...";
+        loader.style.display = 'inline-block';
+        document.getElementById('fileInput').disabled = true;
+
+        fetch('/upload', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) {
+                alert('上传错误: ' + d.error);
+                statusSpan.innerText = "上传失败"; statusSpan.className = "fw-bold text-danger me-2";
+            } else {
+                currentFilename = d.filename; columnNames = d.columns;
+                statusSpan.innerHTML = `<i class="bi bi-check-circle-fill"></i> 当前数据: ${d.filename}`;
+                statusSpan.className = "fw-bold text-success me-2";
+                initUI();
+                document.getElementById('setup-panel').style.display = 'block';
+                document.getElementById('btn-preview').style.display = 'inline-block';
+            }
+        })
+        .catch(e => alert("网络错误"))
+        .finally(() => { loader.style.display = 'none'; document.getElementById('fileInput').disabled = false; });
+    });
+
+    // 初始化 UI (填充所有 Select 和 Checkbox)
+    function initUI() {
+        const targets = ['y-var-select', 'fe-entity-select', 'fe-time-select', 'cluster-var-select'];
+        targets.forEach(id => {
+            const el = document.getElementById(id);
+            el.innerHTML = '<option value="">请选择...</option>';
+            columnNames.forEach(col => el.add(new Option(col, col)));
+        });
+        
+        // 填充 Checkbox 列表
+        const fillContainer = (id, cls) => {
+            const con = document.getElementById(id);
+            con.innerHTML = '';
+            columnNames.forEach(col => {
+                con.innerHTML += `<div class="form-check"><input class="form-check-input ${cls}" type="checkbox" value="${col}"><label class="small text-truncate">${col}</label></div>`;
+            });
+        };
+
+        fillContainer('x-var-container', 'x-box');
+        fillContainer('c-var-container', 'c-box');
+        fillContainer('fe-vars-container', 'fe-box');
+        // [新增] 简单变量选择列表
+        fillContainer('simple-var-container', 'simple-box');
+    }
+
+    // 自动勾选固定变量
+    document.getElementById('fe-entity-select').addEventListener('change', function(e) {
+        if(e.target.value) {
+            const chk = document.getElementById(`fe-chk-${e.target.value}`);
+            if(chk) chk.checked = true;
+        }
+    });
+    document.getElementById('fe-time-select').addEventListener('change', function(e) {
+        if(e.target.value) {
+            const chk = document.getElementById(`fe-chk-${e.target.value}`);
+            if(chk) chk.checked = true;
+        }
+    });
+
+    // 折叠面板辅助函数
+    function togglePanel(forceOpen) {
+        const b = document.getElementById('config-body');
+        if (forceOpen === true) {
+            b.style.display = 'block';
+            return;
+        }
+        b.style.display = (b.style.display === 'none') ? 'block' : 'none';
+    }
+
+    // 核心：切换分析方法 (控制 UI 显隐)
+    function selectMethod(m) {
+        currentMethod = m;
+        document.querySelectorAll('.nav-link-sidebar').forEach(el => el.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // 1. 标题更新
+        let titleMap = {
+            'ols': 'OLS 回归配置', 'fe': '固定效应模型配置', 'logit': 'Logit 模型配置', 'probit': 'Probit 模型配置',
+            'desc': '描述性统计配置', 'corr': '相关性分析配置', 'vif': 'VIF 共线性检验',
+            'f_test': 'F检验配置 (固定效应 vs 混合OLS)', 'hausman': 'Hausman检验配置 (固定效应 vs 随机效应)'
+        };
+        document.getElementById('method-title').innerText = titleMap[m] || m.toUpperCase() + " 配置";
+
+        // 2. 区分 回归模式 vs 简单模式 vs 检验模式
+        const isRegression = ['ols', 'fe', 'logit', 'probit', 'hetero', 'mediation'].includes(m);
+        const isTest = ['f_test', 'hausman'].includes(m);
+        
+        if (isRegression) {
+            // 显示回归变量选择 (Y, X, C)
+            document.getElementById('group-vars-regression').classList.remove('d-none-custom');
+            document.getElementById('group-vars-simple').classList.add('d-none-custom');
+            
+            // 显示回归统计量选项
+            document.getElementById('stats-group-regression').classList.remove('d-none-custom');
+            document.getElementById('stats-group-regression').classList.add('d-flex');
+            document.getElementById('stats-group-desc').classList.add('d-none-custom');
+            document.getElementById('stats-group-desc').classList.remove('d-flex');
+
+            // 显示标准误/自定义行
+            document.getElementById('group-se-custom').style.display = 'flex';
+            document.getElementById('hr-se-custom').style.display = 'block';
+            
+            // 显示追加按钮
+            document.getElementById('btn-run-append').style.display = 'inline-block';
+            document.querySelector('#btn-run-new .btn-text').innerText = "开始新分析";
+            
+            // 只有回归需要显示 SE/T 切换
+            document.getElementById('adv-se-toggle').style.visibility = 'visible';
+
+        } else if (isTest) {
+            // 检验模式：显示回归变量选择但不需要标准误等
+            document.getElementById('group-vars-regression').classList.remove('d-none-custom');
+            document.getElementById('group-vars-simple').classList.add('d-none-custom');
+            
+            // 隐藏统计量选项
+            document.getElementById('stats-group-regression').classList.add('d-none-custom');
+            document.getElementById('stats-group-desc').classList.add('d-none-custom');
+            
+            // 隐藏标准误/自定义行
+            document.getElementById('group-se-custom').style.display = 'none';
+            document.getElementById('hr-se-custom').style.display = 'none';
+            
+            // 隐藏追加按钮
+            document.getElementById('btn-run-append').style.display = 'none';
+            document.querySelector('#btn-run-new .btn-text').innerText = "执行检验";
+            
+            // 隐藏 SE/T 切换
+            document.getElementById('adv-se-toggle').style.visibility = 'hidden';
+            
+            // 必须显示面板设置
+            document.getElementById('fe-specific-settings').style.display = 'block';
+            
+            // Hausman检验显示特定设置
+            if (m === 'hausman') {
+                document.getElementById('hausman-specific-settings').style.display = 'block';
+            } else {
+                document.getElementById('hausman-specific-settings').style.display = 'none';
+            }
+
+        } else {
+            // 简单模式 (Desc, Corr, VIF)
+            // 显示简单变量选择
+            document.getElementById('group-vars-regression').classList.add('d-none-custom');
+            document.getElementById('group-vars-simple').classList.remove('d-none-custom');
+            
+            // 隐藏标准误/自定义行
+            document.getElementById('group-se-custom').style.display = 'none';
+            document.getElementById('hr-se-custom').style.display = 'none';
+            
+            // 隐藏追加按钮
+            document.getElementById('btn-run-append').style.display = 'none';
+            document.querySelector('#btn-run-new .btn-text').innerText = "生成报告";
+            
+            // 隐藏 SE/T 切换 (占位但不可见，保持布局)
+            document.getElementById('adv-se-toggle').style.visibility = 'hidden';
+
+            // 统计量选项切换
+            if (m === 'desc') {
+                document.getElementById('stats-group-regression').classList.add('d-none-custom');
+                document.getElementById('stats-group-regression').classList.remove('d-flex');
+                document.getElementById('stats-group-desc').classList.remove('d-none-custom');
+                document.getElementById('stats-group-desc').classList.add('d-flex');
+            } else {
+                // Corr/VIF 不需要选统计量
+                document.getElementById('stats-group-regression').classList.add('d-none-custom');
+                document.getElementById('stats-group-desc').classList.add('d-none-custom');
+            }
+            
+            // 隐藏面板设置
+            document.getElementById('fe-specific-settings').style.display = 'none';
+        }
+
+        // FE 特有设置（只在FE模式显示，检验模式已经在上面处理）
+        if (m === 'fe') {
+            document.getElementById('fe-specific-settings').style.display = 'block';
+        }
+        
+        togglePanel(true);
+    }
+    
+    function toggleClusterVar() {
+        const type = document.getElementById('se-type-select').value;
+        document.getElementById('cluster-var-box').style.display = (type === 'cluster') ? 'block' : 'none';
+    }
+
+    // 运行分析
+    function runAnalysis(actionType) {
+        const btnId = actionType === 'new' ? 'btn-run-new' : 'btn-run-append';
+        const btn = document.getElementById(btnId);
+        const spinner = btn.querySelector('.spinner-border');
+        
+        // 检查是否是模型检验
+        if (currentMethod === 'f_test' || currentMethod === 'hausman') {
+            runModelTest(currentMethod, btn, spinner);
+            return;
+        }
+        
+        // 1. 收集通用参数
+        const decimals = document.getElementById('decimal-input').value; // 保留小数位设置
+        const showSe = document.getElementById('show_se').checked;
+        const tableTitle = document.getElementById('default-title').value;
+        
+        let payload = {
+            action: actionType, filename: currentFilename, method: currentMethod,
+            decimals: decimals, show_se: showSe, table_title: tableTitle,
+            se_type: document.getElementById('se-type-select').value,
+            cluster_var: document.getElementById('cluster-var-select').value,
+            panel_entity: document.getElementById('fe-entity-select').value,
+            panel_time: document.getElementById('fe-time-select').value,
+            fe_vars: Array.from(document.querySelectorAll('.fe-box:checked')).map(e=>e.value),
+            custom_rows: Array.from(document.querySelectorAll('.custom-row-item')).map(row => ({
+                label: row.children[0].value, value: row.children[1].value
+            }))
+        };
+
+        // 2. 收集变量 (根据模式)
+        const isRegression = ['ols', 'fe', 'logit', 'probit', 'hetero', 'mediation'].includes(currentMethod);
+        
+        if (isRegression) {
+            payload.y_var = document.getElementById('y-var-select').value;
+            const xVars = Array.from(document.querySelectorAll('.x-box:checked')).map(e=>e.value);
+            const cVars = Array.from(document.querySelectorAll('.c-box:checked')).map(e=>e.value);
+            const manual = document.getElementById('manual-controls').value;
+            payload.x_vars = xVars.concat(cVars);
+            payload.manual_controls = manual;
+            
+            // 收集回归统计量
+            let opts = ['nobs'];
+            document.querySelectorAll('.export-opt:checked').forEach(cb => { if(cb.value !== 'nobs') opts.push(cb.value); });
+            payload.export_options = opts;
+
+            // 校验
+            if (!payload.y_var) { alert("请选择因变量 Y"); return; }
+            if (currentMethod === 'fe') {
+                if (!payload.panel_entity || !payload.panel_time) { alert("固定效应模型必须设置 Entity 和 Time ID"); return; }
+                if (payload.fe_vars.length === 0) { alert("请勾选至少一个固定效应变量 (如 Year 或 Industry)"); return; }
+            }
+
+        } else {
+            // 简单模式：收集 simple-box
+            payload.x_vars = Array.from(document.querySelectorAll('.simple-box:checked')).map(e=>e.value);
+            
+            // 收集描述统计量
+            if (currentMethod === 'desc') {
+                let opts = [];
+                document.querySelectorAll('.desc-opt:checked').forEach(cb => opts.push(cb.value));
+                payload.export_options = opts;
+            }
+            
+            if (payload.x_vars.length === 0) { alert("请至少选择一个变量"); return; }
+        }
+
+        btn.disabled = true; spinner.classList.remove('d-none');
+
+        fetch('/analyze', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.error) {
+                 if(data.error.includes("unit interval")) alert("Logit/Probit 错误: Y必须为0/1");
+                 else alert(data.error);
+            } else {
+                document.getElementById('table-output').innerHTML = data.html_table;
+                lastRawOutput = data.raw_output;
+                document.getElementById('result-container').style.display = 'block';
+                if(actionType === 'new') togglePanel(false);
+                
+                // 控制“查看原始输出”按钮显隐
+                document.getElementById('btn-show-raw').style.display = isRegression ? 'inline-block' : 'none';
+            }
+        })
+        .catch(e => alert("服务器错误: " + e))
+        .finally(() => {
+            btn.disabled = false; spinner.classList.add('d-none');
+        });
+    }
+
+    function addCustomRow() {
+        const div = document.createElement('div');
+        div.className = 'custom-row-item';
+        div.innerHTML = `
+            <input type="text" class="form-control form-control-sm" placeholder="Label" style="width: 60%">
+            <input type="text" class="form-control form-control-sm" placeholder="Value" style="width: 30%">
+            <button class="btn btn-sm btn-danger px-2" onclick="this.parentElement.remove()">×</button>
+        `;
+        document.getElementById('custom-rows-container').appendChild(div);
+    }
+    
+    function showRaw() { 
+        document.getElementById('raw-text').innerText = lastRawOutput; 
+        new bootstrap.Modal(document.getElementById('rawModal')).show(); 
+    }
+
+    // 预览数据 (完全保留)
+    function previewData() {
+        if (!currentFilename) { alert('没有上传文件'); return; }
+        const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+        const modalBody = document.querySelector('#previewModal .modal-body');
+        modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div><p>加载中...</p></div>';
+        modal.show();
+        
+        fetch(`/preview?filename=${encodeURIComponent(currentFilename)}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) { modalBody.innerHTML = `<div class="alert alert-danger">${data.error}</div>`; return; }
+                let html = '<div class="table-responsive"><table class="table table-sm table-striped"><thead><tr>';
+                data.columns.forEach(col => { html += `<th title="类型: ${data.dtypes[col]}">${escapeHtml(col)}</th>`; });
+                html += '</tr></thead><tbody>';
+                data.preview.forEach(row => {
+                    html += '<tr>';
+                    data.columns.forEach(col => {
+                        let val = row[col];
+                        let rawAttr = `data-raw="${encodeURIComponent(JSON.stringify(val))}" data-dtype="${data.dtypes[col]}"`;
+                        html += `<td ${rawAttr}>${escapeHtml(formatCell(val, data.dtypes[col]))}</td>`;
+                    });
+                    html += '</tr>';
+                });
+                html += '</tbody></table></div>';
+                modalBody.innerHTML = html;
+                
+                modalBody.addEventListener('dblclick', function(e) {
+                    const td = e.target.closest('td');
+                    if (!td) return;
+                    const raw = decodeURIComponent(td.getAttribute('data-raw'));
+                    let original; try { original = JSON.parse(raw); } catch { original = raw; }
+                    const currentText = td.textContent;
+                    const originalText = (original === null || original === undefined) ? '' : String(original);
+                    if (currentText === originalText) {
+                        td.textContent = formatCell(original, td.getAttribute('data-dtype'));
+                    } else {
+                        td.textContent = originalText;
+                    }
+                });
+            })
+            .catch(err => modalBody.innerHTML = `<div class="alert alert-danger">请求失败: ${err}</div>`);
+    }
+
+    // 运行模型检验（F检验或Hausman检验）
+    function runModelTest(testType, btn, spinner) {
+        // 收集参数
+        const y_var = document.getElementById('y-var-select').value;
+        const xVars = Array.from(document.querySelectorAll('.x-box:checked')).map(e=>e.value);
+        const cVars = Array.from(document.querySelectorAll('.c-box:checked')).map(e=>e.value);
+        const manual = document.getElementById('manual-controls').value;
+        const panel_entity = document.getElementById('fe-entity-select').value;
+        const panel_time = document.getElementById('fe-time-select').value;
+        const decimals = document.getElementById('decimal-input').value;
+        
+        // 处理手动输入的控制变量
+        let allXVars = xVars.concat(cVars);
+        if (manual) {
+            const manualVars = manual.split(/[\s,]+/).filter(v => v.trim() !== '');
+            allXVars = allXVars.concat(manualVars);
+        }
+        
+        // 校验
+        if (!y_var) { alert("请选择因变量 Y"); return; }
+        if (allXVars.length === 0) { alert("请至少选择一个自变量或控制变量"); return; }
+        if (!panel_entity || !panel_time) { alert("模型检验必须设置 Entity 和 Time ID"); return; }
+        
+        const payload = {
+            filename: currentFilename,
+            y_var: y_var,
+            x_vars: allXVars,
+            panel_entity: panel_entity,
+            panel_time: panel_time,
+            decimals: decimals
+        };
+        
+        // Hausman检验特有参数：sigmamore选项
+        if (testType === 'hausman') {
+            payload.sigmamore = document.getElementById('sigmamore-checkbox').checked;
+        }
+        
+        btn.disabled = true; spinner.classList.remove('d-none');
+        
+        const endpoint = testType === 'f_test' ? '/f_test' : '/hausman_test';
+        
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(r => r.json())
+        .then(data => {
+            if(data.error) {
+                alert("检验错误: " + data.error);
+            } else {
+                displayTestResult(data.result, testType);
+                document.getElementById('result-container').style.display = 'block';
+                togglePanel(false);
+                document.getElementById('btn-show-raw').style.display = 'none';
+            }
+        })
+        .catch(e => alert("服务器错误: " + e))
+        .finally(() => {
+            btn.disabled = false; spinner.classList.add('d-none');
+        });
+    }
+
+    // 显示检验结果
+    function displayTestResult(result, testType) {
+        let html = '<div class="card shadow-sm"><div class="card-body">';
+        
+        if (result.error) {
+            html += `<div class="alert alert-warning"><strong>注意：</strong>${result.error}</div>`;
+            html += `<p class="text-muted">${result.suggestion || ''}</p>`;
+            
+            // 即使有错误，也显示系数对比
+            if (result.fe_coeffs && result.re_coeffs) {
+                html += '<h6 class="mt-3">系数对比：</h6>';
+                html += '<div class="table-responsive">';
+                html += '<table class="table table-sm table-bordered">';
+                html += '<thead class="table-light"><tr><th>变量</th><th>固定效应 (b)</th><th>随机效应 (B)</th><th>差异 (b-B)</th>';
+                if (result.fe_std_err) html += '<th>FE标准误</th><th>RE标准误</th>';
+                html += '</tr></thead><tbody>';
+                for (let key in result.fe_coeffs) {
+                    html += `<tr><td>${key}</td><td>${result.fe_coeffs[key]}</td><td>${result.re_coeffs[key]}</td>`;
+                    html += `<td>${result.coeff_diff ? result.coeff_diff[key] : '-'}</td>`;
+                    if (result.fe_std_err) {
+                        html += `<td>${result.fe_std_err[key]}</td><td>${result.re_std_err[key]}</td>`;
+                    }
+                    html += '</tr>';
+                }
+                html += '</tbody></table></div>';
+            }
+        } else {
+            html += `<h5 class="text-primary mb-3">${result.test_name}</h5>`;
+            
+            // 假设检验
+            html += '<div class="row mb-3">';
+            html += '<div class="col-md-6">';
+            html += `<p><strong>原假设 (H₀)：</strong><br>${result.null_hypothesis}</p>`;
+            html += '</div>';
+            html += '<div class="col-md-6">';
+            html += `<p><strong>备择假设 (H₁)：</strong><br>${result.alternative_hypothesis}</p>`;
+            html += '</div>';
+            html += '</div>';
+            
+            // 检验统计量
+            html += '<div class="table-responsive mb-3">';
+            html += '<table class="table table-bordered table-sm">';
+            html += '<thead class="table-light"><tr><th>统计量</th><th>值</th></tr></thead>';
+            html += '<tbody>';
+            
+            if (testType === 'f_test') {
+                html += `<tr><td>F统计量</td><td>${result.f_statistic}${result.significance}</td></tr>`;
+                html += `<tr><td>自由度 (df1, df2)</td><td>(${result.df1}, ${result.df2})</td></tr>`;
+                html += `<tr><td>P值</td><td>${result.p_value}</td></tr>`;
+                html += `<tr><td>RSS (Pooled OLS)</td><td>${result.rss_pooled}</td></tr>`;
+                html += `<tr><td>RSS (Fixed Effects)</td><td>${result.rss_fe}</td></tr>`;
+                html += `<tr><td>个体数量</td><td>${result.n_entities}</td></tr>`;
+                html += `<tr><td>观测数量</td><td>${result.n_obs}</td></tr>`;
+            } else {
+                html += `<tr><td>卡方统计量 (χ²)</td><td>${result.chi2_statistic}${result.significance}</td></tr>`;
+                html += `<tr><td>自由度 (df)</td><td>${result.df}</td></tr>`;
+                html += `<tr><td>P值</td><td>${result.p_value}</td></tr>`;
+            }
+            
+            html += '</tbody></table></div>';
+            
+            // 结论
+            html += `<div class="alert alert-${result.p_value < 0.05 ? 'success' : 'info'}">`;
+            html += `<strong>结论：</strong>${result.conclusion}`;
+            html += '</div>';
+            
+            // 显著性说明
+            html += '<p class="text-muted small">*** p<0.01, ** p<0.05, * p<0.1</p>';
+            
+            // Hausman检验显示详细系数对比
+            if (testType === 'hausman' && result.fe_coeffs && result.re_coeffs) {
+                html += '<h6 class="mt-3">系数对比（Coefficients）：</h6>';
+                html += '<div class="table-responsive">';
+                html += '<table class="table table-sm table-bordered">';
+                html += '<thead class="table-light"><tr><th>变量</th><th>固定效应 (b)</th><th>随机效应 (B)</th><th>差异 (b-B)</th>';
+                if (result.fe_std_err) html += '<th>FE标准误</th><th>RE标准误</th>';
+                if (result.std_err_diff) html += '<th>差异标准误 sqrt(V_b-V_B)</th>';
+                html += '</tr></thead><tbody>';
+                for (let key in result.fe_coeffs) {
+                    html += `<tr><td>${key}</td><td>${result.fe_coeffs[key]}</td><td>${result.re_coeffs[key]}</td>`;
+                    html += `<td>${result.coeff_diff ? result.coeff_diff[key] : '-'}</td>`;
+                    if (result.fe_std_err) {
+                        html += `<td>${result.fe_std_err[key]}</td><td>${result.re_std_err[key]}</td>`;
+                    }
+                    if (result.std_err_diff) {
+                        html += `<td>${result.std_err_diff[key]}</td>`;
+                    }
+                    html += '</tr>';
+                }
+                html += '</tbody></table></div>';
+                html += '<p class="text-muted small mt-2">b = Consistent under H0 and Ha (固定效应估计)<br>';
+                html += 'B = Inconsistent under Ha, efficient under H0 (随机效应估计)</p>';
+            }
+        }
+        
+        html += '</div></div>';
+        document.getElementById('table-output').innerHTML = html;
+    }
+</script>
+{% endblock %}

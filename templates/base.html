@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STATAU - {% block title %}首页{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons/bootstrap-icons.css') }}">
+    <style>
+        body { padding-top: 56px; }
+        .navbar-brand { font-weight: bold; color: #fff !important; }
+        .nav-link { color: rgba(255,255,255,0.8) !important; }
+        .nav-link:hover, .nav-link.active { color: #fff !important; font-weight: 500; }
+        
+    /* --- 全新登录注册模态框设计 --- */
+    .auth-modal-content {
+        border-radius: 20px;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        max-height: 85vh;
+        overflow-y: auto;
+        /* 隐藏滚动条但保持滚动功能 */
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+    .auth-modal-content::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+    .auth-header {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        padding: 20px 20px;
+        text-align: center;
+        position: relative;
+    }
+    .auth-header::after {
+        content: '';
+        position: absolute;
+        bottom: -15px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+        height: 30px;
+        background: white;
+        border-radius: 50%;
+    }
+    .auth-header h5 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.5rem;
+        letter-spacing: 1px;
+    }
+    .auth-header small {
+        opacity: 0.9;
+        font-size: 0.85rem;
+    }
+    
+    /* 切换按钮样式 - 强制覆盖所有Bootstrap样式 */
+    .nav-pills-custom {
+        justify-content: center;
+        margin-top: 15px;
+        margin-bottom: 15px;
+        position: relative;
+        z-index: 10;
+    }
+    #authModal .nav-pills-custom .nav-item button.nav-link {
+        color: #333333 !important;
+        background-color: transparent !important;
+        background: transparent !important;
+        border-radius: 30px;
+        padding: 8px 25px;
+        font-weight: 600;
+        margin: 0 6px;
+        transition: all 0.3s ease;
+        border: 2px solid #e1e5e9 !important;
+        -webkit-text-fill-color: #333333 !important;
+        opacity: 1 !important;
+    }
+    #authModal .nav-pills-custom .nav-item button.nav-link.active {
+        color: #6a11cb !important;
+        -webkit-text-fill-color: #6a11cb !important;
+        background-color: transparent !important;
+        background: transparent !important;
+        border-color: #6a11cb !important;
+        box-shadow: 0 4px 12px rgba(106, 17, 203, 0.2);
+    }
+    #authModal .nav-pills-custom .nav-item button.nav-link:hover:not(.active) {
+        color: #6a11cb !important;
+        -webkit-text-fill-color: #6a11cb !important;
+        border-color: #ddd !important;
+    }
+    /* 确保按钮内部文字不会被任何样式覆盖 */
+    #authModal .nav-pills-custom .nav-item button.nav-link span,
+    #authModal .nav-pills-custom .nav-item button.nav-link:after,
+    #authModal .nav-pills-custom .nav-item button.nav-link:before {
+        color: inherit !important;
+        -webkit-text-fill-color: inherit !important;
+    }
+    
+    /* 表单容器 */
+    .auth-form-container {
+        padding: 0 25px 25px;
+    }
+    
+    /* 输入框样式 */
+    .form-group-auth {
+        margin-bottom: 18px;
+        position: relative;
+    }
+    .form-group-auth label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 600;
+        color: #555;
+        font-size: 0.9rem;
+    }
+    .input-group-auth {
+        position: relative;
+        display: flex;
+        align-items: center;
+        border: 2px solid #e1e5e9;
+        border-radius: 10px;
+        padding: 0 12px;
+        transition: all 0.3s ease;
+        background: white;
+    }
+    .input-group-auth:focus-within {
+        border-color: #6a11cb;
+        box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+    }
+    .input-group-auth i {
+        color: #6a11cb;
+        font-size: 1rem;
+        margin-right: 10px;
+    }
+    .input-group-auth input {
+        flex: 1;
+        border: none;
+        padding: 12px 0;
+        font-size: 0.95rem;
+        background: transparent;
+        outline: none;
+        color: #333;
+    }
+    .input-group-auth input::placeholder {
+        color: #aaa;
+    }
+    
+    /* 验证码区域 */
+    .captcha-container {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+    .captcha-input {
+        flex: 1;
+    }
+    .captcha-image-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+    .captcha-img {
+        height: 50px;
+        border-radius: 6px;
+        border: 2px solid #e1e5e9;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .captcha-img:hover {
+        border-color: #6a11cb;
+        transform: translateY(-2px);
+    }
+    .captcha-refresh {
+        background: none;
+        border: none;
+        color: #6a11cb;
+        font-size: 0.75rem;
+        cursor: pointer;
+        padding: 0;
+        text-decoration: underline;
+    }
+    
+    /* 按钮样式 */
+    .auth-btn {
+        width: 100%;
+        padding: 14px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+    .btn-login {
+        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+    }
+    .btn-login:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(106, 17, 203, 0.3);
+    }
+    .btn-login:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+    .btn-register {
+        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        color: white;
+    }
+    .btn-register:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 176, 155, 0.3);
+    }
+    .btn-register:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    /* 加载动画 */
+    .btn-spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* 错误提示 */
+    .error-message {
+        color: #ff4757;
+        font-size: 0.8rem;
+        margin-top: 4px;
+        display: none;
+    }
+    
+    /* 模态框大小调整 */
+    .auth-modal-dialog {
+        max-width: 460px;
+        margin: 1.75rem auto;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 576px) {
+        .auth-form-container {
+            padding: 0 20px 20px;
+        }
+        #authModal .nav-pills-custom .nav-item button.nav-link {
+            padding: 6px 20px;
+            margin: 0 4px;
+            font-size: 0.9rem;
+        }
+        .auth-modal-dialog {
+            max-width: 90%;
+            margin: 1rem auto;
+        }
+        .auth-header {
+            padding: 15px 20px;
+        }
+    }
+    </style>
+    {% block styles %}{% endblock %}
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">STATAU</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link {% if active_page == 'home' %}active{% endif %}" href="/">首页</a></li>
+                <!-- 数据分析链接：未登录时拦截并弹出登录框 -->
+                <li class="nav-item">
+                    {% if current_user.is_authenticated %}
+                    <a class="nav-link {% if active_page == 'analysis' %}active{% endif %}" href="/analysis">数据分析</a>
+                    {% else %}
+                    <a class="nav-link {% if active_page == 'analysis' %}active{% endif %}" href="javascript:void(0)" onclick="requireLogin()">数据分析</a>
+                    {% endif %}
+                </li>
+                <li class="nav-item"><a class="nav-link {% if active_page == 'database' %}active{% endif %}" href="/database">数据库</a></li>
+                <li class="nav-item"><a class="nav-link {% if active_page == 'help' %}active{% endif %}" href="/help">帮助手册</a></li>
+                <!-- 管理后台入口（仅管理员可见） -->
+                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                <li class="nav-item"><a class="nav-link {% if active_page == 'admin' %}active{% endif %}" href="/admin" style="color: #ffd700 !important;"><i class="bi bi-shield-lock"></i> 管理后台</a></li>
+                {% endif %}
+            </ul>
+            <ul class="navbar-nav ms-auto">
+                {% if current_user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                        {% if current_user.role == 'admin' %}
+                        <span class="badge bg-warning text-dark ms-1">管理员</span>
+                        {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="#">个人中心</a></li>
+                        {% if current_user.role == 'admin' %}
+                        <li><a class="dropdown-item" href="/admin"><i class="bi bi-shield-lock"></i> 管理后台</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        {% endif %}
+                        <li><a class="dropdown-item text-danger" href="/api/logout">退出登录</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <button class="btn btn-outline-light btn-sm ms-2" onclick="openAuthModal('login')">登录 / 注册</button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<!-- 登录/注册 模态框 -->
+<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog auth-modal-dialog">
+        <div class="modal-content auth-modal-content">
+            <!-- 顶部装饰 -->
+            <div class="auth-header">
+                <h5>STATAU</h5>
+                <small>云端计量经济学平台</small>
+            </div>
+            
+            <div class="auth-form-container">
+                <!-- 切换按钮 -->
+                <ul class="nav nav-pills nav-pills-custom" id="authTab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#login-tab" type="button">登录</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#register-tab" type="button" onclick="refreshCaptcha()">注册</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-4">
+                    <!-- 登录表单 -->
+                    <div class="tab-pane fade show active" id="login-tab">
+                        <!-- 登录方式切换 -->
+                        <div style="text-align: center; margin-bottom: 20px;">
+                            <div class="btn-group" role="group" style="width: 100%;">
+                                <button type="button" class="btn btn-outline-primary" id="btn-password-login" onclick="switchLoginMode('password')" style="flex: 1; border-radius: 8px 0 0 8px;">
+                                    <i class="bi bi-key"></i> 密码登录
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="btn-code-login" onclick="switchLoginMode('code')" style="flex: 1; border-radius: 0 8px 8px 0;">
+                                    <i class="bi bi-envelope-check"></i> 验证码登录
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 密码登录表单 -->
+                        <div id="password-login-form">
+                            <div class="form-group-auth">
+                                <label for="login-user">用户名 / 邮箱</label>
+                                <div class="input-group-auth">
+                                    <i class="bi bi-person"></i>
+                                    <input type="text" id="login-user" placeholder="请输入用户名或邮箱">
+                                </div>
+                                <div class="error-message" id="login-user-error"></div>
+                            </div>
+                            
+                            <div class="form-group-auth">
+                                <label for="login-pass">密码</label>
+                                <div class="input-group-auth">
+                                    <i class="bi bi-lock"></i>
+                                    <input type="password" id="login-pass" placeholder="请输入密码">
+                                </div>
+                                <div class="error-message" id="login-pass-error"></div>
+                            </div>
+                            
+                            <!-- 登录按钮：支持加载状态 -->
+                            <button class="auth-btn btn-login" id="btn-login" onclick="handleLogin()">
+                                <span class="btn-spinner" style="display: none;"></span>
+                                <span class="btn-text">立即登录</span>
+                            </button>
+                        </div>
+                        
+                        <!-- 验证码登录表单 -->
+                        <div id="code-login-form" style="display: none;">
+                            <div class="form-group-auth">
+                                <label for="login-email">邮箱地址</label>
+                                <div class="input-group-auth">
+                                    <i class="bi bi-envelope"></i>
+                                    <input type="email" id="login-email" placeholder="请输入注册邮箱">
+                                </div>
+                                <div class="error-message" id="login-email-error"></div>
+                            </div>
+                            
+                            <div class="form-group-auth">
+                                <label for="login-code">邮箱验证码</label>
+                                <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <div class="input-group-auth">
+                                            <i class="bi bi-shield-check"></i>
+                                            <input type="text" id="login-code" placeholder="请输入验证码">
+                                        </div>
+                                        <div class="error-message" id="login-code-error"></div>
+                                    </div>
+                                    <button type="button" id="btn-send-login-code" class="btn btn-outline-primary" style="white-space: nowrap; padding: 12px 20px; border-radius: 10px; font-weight: 600;" onclick="sendLoginCode()">
+                                        发送验证码
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- 登录按钮：支持加载状态 -->
+                            <button class="auth-btn btn-login" id="btn-code-login-submit" onclick="handleCodeLogin()">
+                                <span class="btn-spinner" style="display: none;"></span>
+                                <span class="btn-text">立即登录</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 注册表单 -->
+                    <div class="tab-pane fade" id="register-tab">
+                        <div class="form-group-auth">
+                            <label for="reg-user">用户名</label>
+                            <div class="input-group-auth">
+                                <i class="bi bi-person"></i>
+                                <input type="text" id="reg-user" placeholder="设置用户名（必填）">
+                            </div>
+                            <div class="error-message" id="reg-user-error"></div>
+                        </div>
+                        
+                        <div class="form-group-auth">
+                            <label for="reg-email">电子邮箱</label>
+                            <div class="input-group-auth">
+                                <i class="bi bi-envelope"></i>
+                                <input type="email" id="reg-email" placeholder="请输入有效邮箱地址（必填）">
+                            </div>
+                            <div class="error-message" id="reg-email-error"></div>
+                        </div>
+                        
+                        <!-- 邮箱验证码区域 -->
+                        <div class="form-group-auth">
+                            <label for="reg-email-code">邮箱验证码</label>
+                            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                                <div style="flex: 1;">
+                                    <div class="input-group-auth">
+                                        <i class="bi bi-envelope-check"></i>
+                                        <input type="text" id="reg-email-code" placeholder="请输入邮箱验证码">
+                                    </div>
+                                    <div class="error-message" id="reg-email-code-error"></div>
+                                </div>
+                                <button type="button" id="btn-send-code" class="btn btn-outline-primary" style="white-space: nowrap; padding: 12px 20px; border-radius: 10px; font-weight: 600;" onclick="sendEmailCode()">
+                                    发送验证码
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group-auth">
+                            <label for="reg-pass">密码</label>
+                            <div class="input-group-auth">
+                                <i class="bi bi-lock"></i>
+                                <input type="password" id="reg-pass" placeholder="设置密码（至少6位）">
+                            </div>
+                            <div class="error-message" id="reg-pass-error"></div>
+                        </div>
+                        
+                        <div class="form-group-auth">
+                            <label for="reg-confirm-pass">确认密码</label>
+                            <div class="input-group-auth">
+                                <i class="bi bi-lock-fill"></i>
+                                <input type="password" id="reg-confirm-pass" placeholder="请再次输入密码">
+                            </div>
+                            <div class="error-message" id="reg-confirm-pass-error"></div>
+                        </div>
+                        
+                        <!-- 验证码区域 -->
+                        <div class="form-group-auth">
+                            <label for="reg-captcha">验证码</label>
+                            <div class="captcha-container">
+                                <div class="captcha-input">
+                                    <div class="input-group-auth">
+                                        <i class="bi bi-shield-check"></i>
+                                        <input type="text" id="reg-captcha" placeholder="请输入验证码">
+                                    </div>
+                                    <div class="error-message" id="reg-captcha-error"></div>
+                                </div>
+                                <div class="captcha-image-container">
+                                    <img src="" id="captcha-img" class="captcha-img" title="点击刷新验证码" onclick="refreshCaptcha()" alt="验证码">
+                                    <button type="button" class="captcha-refresh" onclick="refreshCaptcha()">刷新验证码</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 注册按钮：支持加载状态 -->
+                        <button class="auth-btn btn-register" id="btn-register" onclick="handleRegister()">
+                            <span class="btn-spinner" style="display: none;"></span>
+                            <span class="btn-text">注册账户</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script>
+    // ========================================================================
+    // 刷新验证码
+    // ========================================================================
+    function refreshCaptcha() {
+        const captchaImg = document.getElementById('captcha-img');
+        if (captchaImg) {
+            captchaImg.src = '/api/captcha?t=' + new Date().getTime();
+            const captchaInput = document.getElementById('reg-captcha');
+            if (captchaInput) captchaInput.value = '';
+        }
+    }
+
+    // ========================================================================
+    // 错误消息显示/隐藏
+    // ========================================================================
+    function showError(elementId, message) {
+        const errorEl = document.getElementById(elementId);
+        if (errorEl) {
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+        }
+    }
+
+    function hideError(elementId) {
+        const errorEl = document.getElementById(elementId);
+        if (errorEl) {
+            errorEl.style.display = 'none';
+        }
+    }
+
+    // ========================================================================
+    // 按钮加载状态控制
+    // ========================================================================
+    function setButtonLoading(btnId, isLoading, loadingText, normalText) {
+        const btn = document.getElementById(btnId);
+        if (!btn) return;
+        
+        const spinner = btn.querySelector('.btn-spinner');
+        const text = btn.querySelector('.btn-text');
+        
+        if (isLoading) {
+            btn.disabled = true;
+            if (spinner) spinner.style.display = 'block';
+            if (text) text.textContent = loadingText || '处理中...';
+        } else {
+            btn.disabled = false;
+            if (spinner) spinner.style.display = 'none';
+            if (text) text.textContent = normalText || '提交';
+        }
+    }
+
+    // ========================================================================
+    // 登录方式切换
+    // ========================================================================
+    function switchLoginMode(mode) {
+        const passwordForm = document.getElementById('password-login-form');
+        const codeForm = document.getElementById('code-login-form');
+        const btnPassword = document.getElementById('btn-password-login');
+        const btnCode = document.getElementById('btn-code-login');
+        
+        if (mode === 'password') {
+            passwordForm.style.display = 'block';
+            codeForm.style.display = 'none';
+            btnPassword.classList.remove('btn-outline-primary');
+            btnPassword.classList.add('btn-primary');
+            btnCode.classList.remove('btn-primary');
+            btnCode.classList.add('btn-outline-secondary');
+        } else {
+            passwordForm.style.display = 'none';
+            codeForm.style.display = 'block';
+            btnPassword.classList.remove('btn-primary');
+            btnPassword.classList.add('btn-outline-primary');
+            btnCode.classList.remove('btn-outline-secondary');
+            btnCode.classList.add('btn-primary');
+        }
+    }
+
+    // ========================================================================
+    // 发送登录验证码
+    // ========================================================================
+    function sendLoginCode() {
+        const email = document.getElementById('login-email').value.trim();
+        const btn = document.getElementById('btn-send-login-code');
+        
+        // 隐藏错误消息
+        hideError('login-email-error');
+        hideError('login-code-error');
+        
+        // 邮箱验证
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            showError('login-email-error', '请先输入邮箱地址');
+            return;
+        }
+        if (!emailRegex.test(email)) {
+            showError('login-email-error', '请输入有效的邮箱地址');
+            return;
+        }
+        
+        // 禁用按钮并显示倒计时
+        btn.disabled = true;
+        let countdown = 60;
+        const originalText = btn.textContent;
+        
+        const timer = setInterval(() => {
+            btn.textContent = `${countdown}秒后重试`;
+            countdown--;
+            
+            if (countdown < 0) {
+                clearInterval(timer);
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }, 1000);
+        
+        // 发送请求
+        fetch('/api/send_login_code', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: email})
+        }).then(r => r.json()).then(d => {
+            if (d.status === 'success') {
+                showError('login-code-error', '✓ ' + d.message);
+                document.getElementById('login-code-error').style.color = '#28a745';
+            } else {
+                // 发送失败，恢复按钮
+                clearInterval(timer);
+                btn.disabled = false;
+                btn.textContent = originalText;
+                showError('login-email-error', d.error || '发送失败');
+            }
+        }).catch(() => {
+            clearInterval(timer);
+            btn.disabled = false;
+            btn.textContent = originalText;
+            showError('login-email-error', '网络错误，请稍后重试');
+        });
+    }
+
+    // ========================================================================
+    // 验证码登录逻辑
+    // ========================================================================
+    function handleCodeLogin() {
+        const email = document.getElementById('login-email').value.trim();
+        const code = document.getElementById('login-code').value.trim();
+        
+        // 隐藏所有错误消息
+        hideError('login-email-error');
+        hideError('login-code-error');
+        
+        let hasError = false;
+        
+        // 邮箱验证
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            showError('login-email-error', '请输入邮箱地址');
+            hasError = true;
+        } else if (!emailRegex.test(email)) {
+            showError('login-email-error', '请输入有效的邮箱地址');
+            hasError = true;
+        }
+        
+        // 验证码验证
+        if (!code) {
+            showError('login-code-error', '请输入验证码');
+            hasError = true;
+        } else if (code.length !== 6) {
+            showError('login-code-error', '验证码应为6位数字');
+            hasError = true;
+        }
+        
+        if (hasError) return;
+        
+        // 设置按钮为加载状态
+        setButtonLoading('btn-code-login-submit', true, '正在登录...', '立即登录');
+        
+        fetch('/api/login_with_code', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: email, code: code})
+        }).then(r => r.json()).then(d => {
+            if(d.status === 'success') {
+                // 登录成功，刷新页面
+                location.reload();
+            } else {
+                // 登录失败，恢复按钮状态
+                setButtonLoading('btn-code-login-submit', false, '正在登录...', '立即登录');
+                showError('login-code-error', d.error || '登录失败');
+            }
+        }).catch(() => {
+            setButtonLoading('btn-code-login-submit', false, '正在登录...', '立即登录');
+            showError('login-code-error', '网络错误，请稍后重试');
+        });
+    }
+
+    // ========================================================================
+    // 密码登录逻辑（带加载状态）
+    // ========================================================================
+    function handleLogin() {
+        const u = document.getElementById('login-user').value.trim();
+        const p = document.getElementById('login-pass').value;
+        
+        // 隐藏所有错误消息
+        hideError('login-user-error');
+        hideError('login-pass-error');
+        
+        let hasError = false;
+        
+        if (!u) {
+            showError('login-user-error', '请输入用户名或邮箱');
+            hasError = true;
+        }
+        if (!p) {
+            showError('login-pass-error', '请输入密码');
+            hasError = true;
+        }
+        
+        if (hasError) return;
+        
+        // 设置按钮为加载状态
+        setButtonLoading('btn-login', true, '正在登录...', '立即登录');
+        
+        fetch('/api/login', {
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username: u, password: p})
+        }).then(r => r.json()).then(d => {
+            if(d.status === 'success') {
+                // 登录成功，刷新页面
+                location.reload();
+            } else {
+                // 登录失败，恢复按钮状态
+                setButtonLoading('btn-login', false, '正在登录...', '立即登录');
+                showError('login-pass-error', d.error || '登录失败，请检查用户名和密码');
+            }
+        }).catch(() => {
+            setButtonLoading('btn-login', false, '正在登录...', '立即登录');
+            showError('login-pass-error', '网络错误，请稍后重试');
+        });
+    }
+
+    // ========================================================================
+    // 发送邮箱验证码
+    // ========================================================================
+    function sendEmailCode() {
+        const email = document.getElementById('reg-email').value.trim();
+        const btn = document.getElementById('btn-send-code');
+        
+        // 隐藏错误消息
+        hideError('reg-email-error');
+        hideError('reg-email-code-error');
+        
+        // 邮箱验证
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            showError('reg-email-error', '请先输入邮箱地址');
+            return;
+        }
+        if (!emailRegex.test(email)) {
+            showError('reg-email-error', '请输入有效的邮箱地址');
+            return;
+        }
+        
+        // 禁用按钮并显示倒计时
+        btn.disabled = true;
+        let countdown = 60;
+        const originalText = btn.textContent;
+        
+        const timer = setInterval(() => {
+            btn.textContent = `${countdown}秒后重试`;
+            countdown--;
+            
+            if (countdown < 0) {
+                clearInterval(timer);
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        }, 1000);
+        
+        // 发送请求
+        fetch('/api/send_email_code', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({email: email})
+        }).then(r => r.json()).then(d => {
+            if (d.status === 'success') {
+                showError('reg-email-code-error', '✓ ' + d.message);
+                document.getElementById('reg-email-code-error').style.color = '#28a745';
+            } else {
+                // 发送失败，恢复按钮
+                clearInterval(timer);
+                btn.disabled = false;
+                btn.textContent = originalText;
+                showError('reg-email-error', d.error || '发送失败');
+            }
+        }).catch(() => {
+            clearInterval(timer);
+            btn.disabled = false;
+            btn.textContent = originalText;
+            showError('reg-email-error', '网络错误，请稍后重试');
+        });
+    }
+
+    // ========================================================================
+    // 注册逻辑（带加载状态）
+    // ========================================================================
+    function handleRegister() {
+        const u = document.getElementById('reg-user').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const p = document.getElementById('reg-pass').value;
+        const confirmPass = document.getElementById('reg-confirm-pass').value;
+        const captcha = document.getElementById('reg-captcha').value.trim();
+        const emailCode = document.getElementById('reg-email-code').value.trim();
+        
+        // 隐藏所有错误消息
+        hideError('reg-user-error');
+        hideError('reg-email-error');
+        hideError('reg-pass-error');
+        hideError('reg-confirm-pass-error');
+        hideError('reg-captcha-error');
+        hideError('reg-email-code-error');
+        
+        let hasError = false;
+        
+        // 用户名验证
+        if (!u) {
+            showError('reg-user-error', '请输入用户名');
+            hasError = true;
+        } else if (u.length < 3) {
+            showError('reg-user-error', '用户名至少3个字符');
+            hasError = true;
+        }
+        
+        // 邮箱验证
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email) {
+            showError('reg-email-error', '请输入邮箱地址');
+            hasError = true;
+        } else if (!emailRegex.test(email)) {
+            showError('reg-email-error', '请输入有效的邮箱地址');
+            hasError = true;
+        }
+        
+        // 密码验证
+        if (!p) {
+            showError('reg-pass-error', '请输入密码');
+            hasError = true;
+        } else if (p.length < 6) {
+            showError('reg-pass-error', '密码长度至少6位');
+            hasError = true;
+        }
+        
+        // 确认密码验证
+        if (!confirmPass) {
+            showError('reg-confirm-pass-error', '请再次输入密码');
+            hasError = true;
+        } else if (p !== confirmPass) {
+            showError('reg-confirm-pass-error', '两次输入的密码不一致');
+            hasError = true;
+        }
+        
+        // 图形验证码验证
+        if (!captcha) {
+            showError('reg-captcha-error', '请输入图形验证码');
+            hasError = true;
+        } else if (captcha.length !== 4) {
+            showError('reg-captcha-error', '图形验证码应为4位字符');
+            hasError = true;
+        }
+        
+        // 邮箱验证码验证
+        if (!emailCode) {
+            showError('reg-email-code-error', '请输入邮箱验证码');
+            hasError = true;
+        } else if (emailCode.length !== 6) {
+            showError('reg-email-code-error', '邮箱验证码应为6位数字');
+            hasError = true;
+        }
+        
+        if (hasError) return;
+        
+        // 设置按钮为加载状态
+        setButtonLoading('btn-register', true, '正在注册...', '注册账户');
+        
+        // 发送注册请求
+        fetch('/api/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                username: u,
+                password: p,
+                email: email,
+                captcha: captcha,
+                email_code: emailCode
+            })
+        }).then(r => r.json()).then(d => {
+            // 恢复按钮状态
+            setButtonLoading('btn-register', false, '正在注册...', '注册账户');
+            
+            if(d.status === 'success') {
+                alert('🎉 注册成功！请使用您的账户登录。');
+                // 自动切回登录页
+                const loginTabBtn = document.querySelector('button[data-bs-target="#login-tab"]');
+                if (loginTabBtn) {
+                    const tab = bootstrap.Tab.getInstance(loginTabBtn) || new bootstrap.Tab(loginTabBtn);
+                    tab.show();
+                }
+                // 预填充用户名
+                document.getElementById('login-user').value = u;
+                document.getElementById('login-pass').value = '';
+                // 清空注册表单
+                document.getElementById('reg-user').value = '';
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-pass').value = '';
+                document.getElementById('reg-confirm-pass').value = '';
+                document.getElementById('reg-captcha').value = '';
+                document.getElementById('reg-email-code').value = '';
+                refreshCaptcha();
+            } else {
+                // 显示具体错误
+                const errorMsg = d.error || '注册失败';
+                if (errorMsg.includes('验证码') || errorMsg.includes('captcha')) {
+                    showError('reg-captcha-error', errorMsg);
+                    refreshCaptcha();
+                } else if (errorMsg.includes('用户') || errorMsg.includes('username')) {
+                    showError('reg-user-error', errorMsg);
+                } else if (errorMsg.includes('邮箱') || errorMsg.includes('email')) {
+                    showError('reg-email-error', errorMsg);
+                } else {
+                    showError('reg-user-error', errorMsg);
+                }
+            }
+        }).catch(() => {
+            setButtonLoading('btn-register', false, '正在注册...', '注册账户');
+            showError('reg-user-error', '网络错误，请稍后重试');
+        });
+    }
+
+    // ========================================================================
+    // 打开模态框工具函数
+    // ========================================================================
+    function openAuthModal(type, message) {
+        const modal = new bootstrap.Modal(document.getElementById('authModal'));
+        modal.show();
+        
+        // 自动切换到对应标签
+        const tabId = type === 'register' ? '#register-tab' : '#login-tab';
+        const tabBtn = document.querySelector(`button[data-bs-target="${tabId}"]`);
+        if (tabBtn) {
+            bootstrap.Tab.getInstance(tabBtn) || new bootstrap.Tab(tabBtn).show();
+        }
+        
+        if(type === 'register') refreshCaptcha();
+        
+        // 如果有提示消息，显示在用户名输入框上方
+        if (message) {
+            setTimeout(() => {
+                showError('login-user-error', message);
+            }, 300);
+        }
+    }
+
+    // ========================================================================
+    // 需要登录才能访问的功能
+    // ========================================================================
+    function requireLogin() {
+        openAuthModal('login', '请先登录后再使用数据分析功能');
+    }
+
+    // ========================================================================
+    // 页面加载时初始化
+    // ========================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化登录方式为密码登录
+        switchLoginMode('password');
+        
+        const captchaImg = document.getElementById('captcha-img');
+        if (captchaImg) {
+            refreshCaptcha();
+        }
+        
+        // 为输入框添加实时验证（清除错误提示）
+        const inputs = document.querySelectorAll('.input-group-auth input');
+        inputs.forEach(input => {
+            input.addEventListener('input', function() {
+                const errorId = this.id + '-error';
+                hideError(errorId);
+            });
+        });
+        
+        // 支持回车键登录
+        document.getElementById('login-pass').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+        document.getElementById('login-user').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+    });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
