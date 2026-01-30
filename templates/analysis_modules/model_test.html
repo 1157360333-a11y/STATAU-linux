@@ -1,0 +1,332 @@
+<!-- 模型检验模块 (F检验 & Hausman检验) -->
+<div id="module-test" class="analysis-module">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="m-0 text-primary fw-bold" id="test-method-title">🔬 模型检验配置</h6>
+            <button class="btn btn-sm btn-light" onclick="toggleModulePanel('test')">折叠/展开</button>
+        </div>
+        <div class="card-body" id="test-config-body">
+            
+            <!-- 变量选择区域 -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-12">
+                    <label class="small fw-bold">因变量 (Y) <span class="text-danger">*</span></label>
+                    <select id="test-y-var-select" class="form-select form-select-sm"></select>
+                </div>
+                <div class="col-md-6">
+                    <label class="small fw-bold">自变量 (X)</label>
+                    <div id="test-x-var-container" class="var-list-container"></div>
+                </div>
+                <div class="col-md-6">
+                    <label class="small fw-bold">控制变量</label>
+                    <div id="test-c-var-container" class="var-list-container"></div>
+                </div>
+                <div class="col-md-12">
+                    <input type="text" id="test-manual-controls" class="form-control form-control-sm" placeholder="手动输入控制变量 (空格分隔)...">
+                </div>
+            </div>
+
+            <!-- 面板数据设置（必须） -->
+            <div class="mt-3 p-3 bg-light rounded border">
+                <h6 class="fw-bold small text-primary"><i class="bi bi-layers"></i> 面板结构设置</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="small fw-bold">个体ID (Entity) <span class="text-danger">*</span></label>
+                        <select id="test-entity-select" class="form-select form-select-sm"></select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small fw-bold">时间ID (Time) <span class="text-danger">*</span></label>
+                        <select id="test-time-select" class="form-select form-select-sm"></select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hausman检验特定设置 -->
+            <div id="test-hausman-settings" class="mt-3 p-3 bg-light rounded border" style="display:none;">
+                <h6 class="fw-bold small text-primary"><i class="bi bi-gear"></i> Hausman检验选项</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="test-sigmamore-checkbox">
+                    <label class="form-check-label" for="test-sigmamore-checkbox">
+                        <strong>使用sigmamore选项</strong> (基于随机效应统一方差估计)
+                    </label>
+                    <div class="form-text small">
+                        启用此选项可以解决协方差矩阵不正定的问题，得到与Stata一致的检验结果。
+                        <br>不启用时使用原始协方差矩阵，可能遇到"V_b-V_B is not positive definite"警告。
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-3">
+
+            <!-- 格式设置 -->
+            <div class="row align-items-center mb-3">
+                <div class="col-md-6">
+                    <label class="small fw-bold">数值小数位</label>
+                    <input type="number" id="test-decimal-input" class="form-control form-control-sm" value="4" min="1" max="6">
+                </div>
+            </div>
+
+            <!-- 运行按钮 -->
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary btn-sm flex-grow-1" id="btn-test-run" onclick="runModelTest()">
+                    <span class="spinner-border spinner-border-sm d-none"></span>
+                    <span class="btn-text">执行检验</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结果展示区 -->
+    <div id="test-result-container" style="display:none; padding-bottom: 50px;">
+        <div class="d-flex justify-content-center gap-3 mb-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleModulePanel('test', true)">重新配置</button>
+        </div>
+        
+        <!-- 导出按钮组 -->
+        <div id="export-buttons-test" class="my-3">
+            <div class="card shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <strong><i class="bi bi-download"></i> 导出结果</strong>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" onclick="exportToWord()" title="导出为Word文档">
+                                <i class="bi bi-file-word"></i> Word
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="exportToExcel()" title="导出为Excel表格">
+                                <i class="bi bi-file-excel"></i> Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="exportToTxt()" title="导出为纯文本">
+                                <i class="bi bi-file-text"></i> TXT
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="exportToCSV()" title="导出为CSV文件">
+                                <i class="bi bi-filetype-csv"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="test-table-output"></div>
+    </div>
+</div>
+
+<script>
+// 模型检验模块全局变量
+let testCurrentMethod = 'f_test';
+
+// 模型检验模块专用函数
+function initTestModule(columns) {
+    // 填充下拉选择框
+    const selects = ['test-y-var-select', 'test-entity-select', 'test-time-select'];
+    selects.forEach(id => {
+        const el = document.getElementById(id);
+        el.innerHTML = '<option value="">请选择...</option>';
+        columns.forEach(col => el.add(new Option(col, col)));
+    });
+    
+    // 填充复选框列表
+    const fillContainer = (id, cls) => {
+        const con = document.getElementById(id);
+        con.innerHTML = '';
+        columns.forEach(col => {
+            con.innerHTML += `
+                <div class="form-check">
+                    <input class="form-check-input ${cls}" type="checkbox" value="${col}" id="${id}-${col}">
+                    <label class="form-check-label small text-truncate" for="${id}-${col}">${col}</label>
+                </div>
+            `;
+        });
+    };
+    
+    fillContainer('test-x-var-container', 'test-x-box');
+    fillContainer('test-c-var-container', 'test-c-box');
+}
+
+function setTestMethod(method) {
+    testCurrentMethod = method;
+    
+    const titleMap = {
+        'f_test': '🔬 F检验配置 (固定效应 vs 混合OLS)',
+        'hausman': '🧪 Hausman检验配置 (固定效应 vs 随机效应)'
+    };
+    
+    document.getElementById('test-method-title').innerText = titleMap[method] || '模型检验配置';
+    
+    // Hausman检验显示特定设置
+    document.getElementById('test-hausman-settings').style.display = (method === 'hausman') ? 'block' : 'none';
+}
+
+function runModelTest() {
+    const btn = document.getElementById('btn-test-run');
+    const spinner = btn.querySelector('.spinner-border');
+    
+    // 收集变量
+    const y_var = document.getElementById('test-y-var-select').value;
+    const xVars = Array.from(document.querySelectorAll('.test-x-box:checked')).map(e => e.value);
+    const cVars = Array.from(document.querySelectorAll('.test-c-box:checked')).map(e => e.value);
+    const manual = document.getElementById('test-manual-controls').value;
+    const panel_entity = document.getElementById('test-entity-select').value;
+    const panel_time = document.getElementById('test-time-select').value;
+    const decimals = document.getElementById('test-decimal-input').value;
+    
+    // 处理手动输入的控制变量
+    let allXVars = xVars.concat(cVars);
+    if (manual) {
+        const manualVars = manual.split(/[\s,]+/).filter(v => v.trim() !== '');
+        allXVars = allXVars.concat(manualVars);
+    }
+    
+    // 校验
+    if (!y_var) {
+        alert("请选择因变量 Y");
+        return;
+    }
+    if (allXVars.length === 0) {
+        alert("请至少选择一个自变量或控制变量");
+        return;
+    }
+    if (!panel_entity || !panel_time) {
+        alert("模型检验必须设置 Entity 和 Time ID");
+        return;
+    }
+    
+    const payload = {
+        filename: window.currentFilename,
+        y_var: y_var,
+        x_vars: allXVars,
+        panel_entity: panel_entity,
+        panel_time: panel_time,
+        decimals: decimals
+    };
+    
+    // Hausman检验特有参数
+    if (testCurrentMethod === 'hausman') {
+        payload.sigmamore = document.getElementById('test-sigmamore-checkbox').checked;
+    }
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    const endpoint = testCurrentMethod === 'f_test' ? '/f_test' : '/hausman_test';
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert("检验错误: " + data.error);
+        } else {
+            displayTestResult(data.result, testCurrentMethod);
+            document.getElementById('test-result-container').style.display = 'block';
+            toggleModulePanel('test', false);
+        }
+    })
+    .catch(e => alert("服务器错误: " + e))
+    .finally(() => {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+    });
+}
+
+function displayTestResult(result, testType) {
+    let html = '<div class="card shadow-sm"><div class="card-body">';
+    
+    if (result.error) {
+        html += `<div class="alert alert-warning"><strong>注意：</strong>${result.error}</div>`;
+        html += `<p class="text-muted">${result.suggestion || ''}</p>`;
+        
+        // 即使有错误，也显示系数对比
+        if (result.fe_coeffs && result.re_coeffs) {
+            html += '<h6 class="mt-3">系数对比：</h6>';
+            html += '<div class="table-responsive">';
+            html += '<table class="table table-sm table-bordered">';
+            html += '<thead class="table-light"><tr><th>变量</th><th>固定效应 (b)</th><th>随机效应 (B)</th><th>差异 (b-B)</th>';
+            if (result.fe_std_err) html += '<th>FE标准误</th><th>RE标准误</th>';
+            html += '</tr></thead><tbody>';
+            for (let key in result.fe_coeffs) {
+                html += `<tr><td>${key}</td><td>${result.fe_coeffs[key]}</td><td>${result.re_coeffs[key]}</td>`;
+                html += `<td>${result.coeff_diff ? result.coeff_diff[key] : '-'}</td>`;
+                if (result.fe_std_err) {
+                    html += `<td>${result.fe_std_err[key]}</td><td>${result.re_std_err[key]}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</tbody></table></div>';
+        }
+    } else {
+        html += `<h5 class="text-primary mb-3">${result.test_name}</h5>`;
+        
+        // 假设检验
+        html += '<div class="row mb-3">';
+        html += '<div class="col-md-6">';
+        html += `<p><strong>原假设 (H₀)：</strong><br>${result.null_hypothesis}</p>`;
+        html += '</div>';
+        html += '<div class="col-md-6">';
+        html += `<p><strong>备择假设 (H₁)：</strong><br>${result.alternative_hypothesis}</p>`;
+        html += '</div>';
+        html += '</div>';
+        
+        // 检验统计量
+        html += '<div class="table-responsive mb-3">';
+        html += '<table class="table table-bordered table-sm">';
+        html += '<thead class="table-light"><tr><th>统计量</th><th>值</th></tr></thead>';
+        html += '<tbody>';
+        
+        if (testType === 'f_test') {
+            html += `<tr><td>F统计量</td><td>${result.f_statistic}${result.significance}</td></tr>`;
+            html += `<tr><td>自由度 (df1, df2)</td><td>(${result.df1}, ${result.df2})</td></tr>`;
+            html += `<tr><td>P值</td><td>${result.p_value}</td></tr>`;
+            html += `<tr><td>RSS (Pooled OLS)</td><td>${result.rss_pooled}</td></tr>`;
+            html += `<tr><td>RSS (Fixed Effects)</td><td>${result.rss_fe}</td></tr>`;
+            html += `<tr><td>个体数量</td><td>${result.n_entities}</td></tr>`;
+            html += `<tr><td>观测数量</td><td>${result.n_obs}</td></tr>`;
+        } else {
+            html += `<tr><td>卡方统计量 (χ²)</td><td>${result.chi2_statistic}${result.significance}</td></tr>`;
+            html += `<tr><td>自由度 (df)</td><td>${result.df}</td></tr>`;
+            html += `<tr><td>P值</td><td>${result.p_value}</td></tr>`;
+        }
+        
+        html += '</tbody></table></div>';
+        
+        // 结论
+        html += `<div class="alert alert-${result.p_value < 0.05 ? 'success' : 'info'}">`;
+        html += `<strong>结论：</strong>${result.conclusion}`;
+        html += '</div>';
+        
+        // 显著性说明
+        html += '<p class="text-muted small">*** p<0.01, ** p<0.05, * p<0.1</p>';
+        
+        // Hausman检验显示详细系数对比
+        if (testType === 'hausman' && result.fe_coeffs && result.re_coeffs) {
+            html += '<h6 class="mt-3">系数对比（Coefficients）：</h6>';
+            html += '<div class="table-responsive">';
+            html += '<table class="table table-sm table-bordered">';
+            html += '<thead class="table-light"><tr><th>变量</th><th>固定效应 (b)</th><th>随机效应 (B)</th><th>差异 (b-B)</th>';
+            if (result.fe_std_err) html += '<th>FE标准误</th><th>RE标准误</th>';
+            if (result.std_err_diff) html += '<th>差异标准误 sqrt(V_b-V_B)</th>';
+            html += '</tr></thead><tbody>';
+            for (let key in result.fe_coeffs) {
+                html += `<tr><td>${key}</td><td>${result.fe_coeffs[key]}</td><td>${result.re_coeffs[key]}</td>`;
+                html += `<td>${result.coeff_diff ? result.coeff_diff[key] : '-'}</td>`;
+                if (result.fe_std_err) {
+                    html += `<td>${result.fe_std_err[key]}</td><td>${result.re_std_err[key]}</td>`;
+                }
+                if (result.std_err_diff) {
+                    html += `<td>${result.std_err_diff[key]}</td>`;
+                }
+                html += '</tr>';
+            }
+            html += '</tbody></table></div>';
+            html += '<p class="text-muted small mt-2">b = Consistent under H0 and Ha (固定效应估计)<br>';
+            html += 'B = Inconsistent under Ha, efficient under H0 (随机效应估计)</p>';
+        }
+    }
+    
+    html += '</div></div>';
+    document.getElementById('test-table-output').innerHTML = html;
+}
+</script>

@@ -1,0 +1,201 @@
+<!-- 描述性统计分析模块 -->
+<div id="module-descriptive" class="analysis-module">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="m-0 text-primary fw-bold">📊 描述性统计配置</h6>
+            <button class="btn btn-sm btn-light" onclick="toggleModulePanel('descriptive')">折叠/展开</button>
+        </div>
+        <div class="card-body" id="descriptive-config-body">
+            <!-- 变量选择 -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label class="small fw-bold">请选择分析变量 (多选) <span class="text-danger">*</span></label>
+                    <div id="descriptive-var-container" class="var-list-container" style="height: 200px;">
+                        <!-- 动态填充变量列表 -->
+                    </div>
+                    <small class="text-muted">选择需要进行描述性统计的变量</small>
+                </div>
+            </div>
+
+            <hr class="my-3">
+
+            <!-- 统计量选择 -->
+            <div class="mb-3">
+                <label class="small fw-bold">选择统计量:</label>
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="form-check">
+                        <input class="form-check-input descriptive-stat-opt" type="checkbox" value="mean" checked id="desc-mean">
+                        <label class="form-check-label" for="desc-mean">均值 (Mean)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input descriptive-stat-opt" type="checkbox" value="std" checked id="desc-std">
+                        <label class="form-check-label" for="desc-std">标准差 (Std.Dev)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input descriptive-stat-opt" type="checkbox" value="min" checked id="desc-min">
+                        <label class="form-check-label" for="desc-min">最小值 (Min)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input descriptive-stat-opt" type="checkbox" value="max" checked id="desc-max">
+                        <label class="form-check-label" for="desc-max">最大值 (Max)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input descriptive-stat-opt" type="checkbox" value="p50" id="desc-p50">
+                        <label class="form-check-label" for="desc-p50">中位数 (Median)</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input descriptive-stat-opt" type="checkbox" value="nobs" checked disabled id="desc-nobs">
+                        <label class="form-check-label" for="desc-nobs">观测数 (N)</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 格式设置 -->
+            <div class="accordion mb-3" id="descriptiveAdvAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed py-2 bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#descriptiveAdvConfig">
+                            ⚙️ 格式设置
+                        </button>
+                    </h2>
+                    <div id="descriptiveAdvConfig" class="accordion-collapse collapse">
+                        <div class="accordion-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <label class="small">数值小数位</label>
+                                    <input type="number" id="descriptive-decimal-input" class="form-control form-control-sm" value="3" min="1" max="6">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small">表格标题</label>
+                                    <input type="text" id="descriptive-title" class="form-control form-control-sm" value="描述性统计">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 运行按钮 -->
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary btn-sm flex-grow-1" id="btn-descriptive-run" onclick="runDescriptiveAnalysis()">
+                    <span class="spinner-border spinner-border-sm d-none"></span>
+                    <span class="btn-text">生成描述性统计</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结果展示区 -->
+    <div id="descriptive-result-container" style="display:none; padding-bottom: 50px;">
+        <div class="d-flex justify-content-center gap-3 mb-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleModulePanel('descriptive', true)">重新配置</button>
+        </div>
+        
+        <!-- 导出按钮组 -->
+        <div id="export-buttons-descriptive" class="my-3">
+            <div class="card shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <strong><i class="bi bi-download"></i> 导出结果</strong>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" onclick="exportToWord()" title="导出为Word文档">
+                                <i class="bi bi-file-word"></i> Word
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="exportToExcel()" title="导出为Excel表格">
+                                <i class="bi bi-file-excel"></i> Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="exportToTxt()" title="导出为纯文本">
+                                <i class="bi bi-file-text"></i> TXT
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="exportToCSV()" title="导出为CSV文件">
+                                <i class="bi bi-filetype-csv"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="descriptive-table-output"></div>
+    </div>
+</div>
+
+<script>
+// 描述性统计模块专用函数
+function initDescriptiveModule(columns) {
+    const container = document.getElementById('descriptive-var-container');
+    container.innerHTML = '';
+    columns.forEach(col => {
+        container.innerHTML += `
+            <div class="form-check">
+                <input class="form-check-input descriptive-var-box" type="checkbox" value="${col}" id="desc-var-${col}">
+                <label class="form-check-label small text-truncate" for="desc-var-${col}">${col}</label>
+            </div>
+        `;
+    });
+}
+
+function runDescriptiveAnalysis() {
+    const btn = document.getElementById('btn-descriptive-run');
+    const spinner = btn.querySelector('.spinner-border');
+    
+    // 收集选中的变量
+    const selectedVars = Array.from(document.querySelectorAll('.descriptive-var-box:checked')).map(e => e.value);
+    if (selectedVars.length === 0) {
+        alert("请至少选择一个变量");
+        return;
+    }
+    
+    // 收集统计量选项
+    const statOptions = Array.from(document.querySelectorAll('.descriptive-stat-opt:checked')).map(e => e.value);
+    
+    // 收集格式设置
+    const decimals = document.getElementById('descriptive-decimal-input').value;
+    const tableTitle = document.getElementById('descriptive-title').value;
+    
+    const payload = {
+        action: 'new',
+        filename: window.currentFilename,
+        method: 'desc',
+        x_vars: selectedVars,
+        export_options: statOptions,
+        decimals: decimals,
+        table_title: tableTitle
+    };
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    fetch('/analyze', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert("分析错误: " + data.error);
+        } else {
+            document.getElementById('descriptive-table-output').innerHTML = data.html_table;
+            document.getElementById('descriptive-result-container').style.display = 'block';
+            toggleModulePanel('descriptive', false);
+        }
+    })
+    .catch(e => alert("服务器错误: " + e))
+    .finally(() => {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+    });
+}
+
+function toggleModulePanel(moduleName, forceOpen) {
+    const body = document.getElementById(`${moduleName}-config-body`);
+    if (forceOpen === true) {
+        body.style.display = 'block';
+    } else if (forceOpen === false) {
+        body.style.display = 'none';
+    } else {
+        body.style.display = (body.style.display === 'none') ? 'block' : 'none';
+    }
+}
+</script>

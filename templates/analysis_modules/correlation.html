@@ -1,0 +1,161 @@
+<!-- 相关性分析模块 -->
+<div id="module-correlation" class="analysis-module">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="m-0 text-primary fw-bold">🔗 相关性分析配置</h6>
+            <button class="btn btn-sm btn-light" onclick="toggleModulePanel('correlation')">折叠/展开</button>
+        </div>
+        <div class="card-body" id="correlation-config-body">
+            <!-- 变量选择 -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label class="small fw-bold">请选择分析变量 (多选) <span class="text-danger">*</span></label>
+                    <div id="correlation-var-container" class="var-list-container" style="height: 200px;">
+                        <!-- 动态填充变量列表 -->
+                    </div>
+                    <small class="text-muted">选择需要计算相关系数的变量（至少2个）</small>
+                </div>
+            </div>
+
+            <hr class="my-3">
+
+            <!-- 格式设置 -->
+            <div class="accordion mb-3" id="correlationAdvAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed py-2 bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#correlationAdvConfig">
+                            ⚙️ 格式设置
+                        </button>
+                    </h2>
+                    <div id="correlationAdvConfig" class="accordion-collapse collapse">
+                        <div class="accordion-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <label class="small">数值小数位</label>
+                                    <input type="number" id="correlation-decimal-input" class="form-control form-control-sm" value="3" min="1" max="6">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small">表格标题</label>
+                                    <input type="text" id="correlation-title" class="form-control form-control-sm" value="相关性分析">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 说明信息 -->
+            <div class="alert alert-info py-2 small">
+                <i class="bi bi-info-circle"></i> 
+                相关系数矩阵将显示变量间的Pearson相关系数，并标注显著性水平：*** p<0.01, ** p<0.05, * p<0.1
+            </div>
+
+            <!-- 运行按钮 -->
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary btn-sm flex-grow-1" id="btn-correlation-run" onclick="runCorrelationAnalysis()">
+                    <span class="spinner-border spinner-border-sm d-none"></span>
+                    <span class="btn-text">生成相关性矩阵</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结果展示区 -->
+    <div id="correlation-result-container" style="display:none; padding-bottom: 50px;">
+        <div class="d-flex justify-content-center gap-3 mb-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleModulePanel('correlation', true)">重新配置</button>
+        </div>
+        
+        <!-- 导出按钮组 -->
+        <div id="export-buttons-correlation" class="my-3">
+            <div class="card shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <strong><i class="bi bi-download"></i> 导出结果</strong>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" onclick="exportToWord()" title="导出为Word文档">
+                                <i class="bi bi-file-word"></i> Word
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="exportToExcel()" title="导出为Excel表格">
+                                <i class="bi bi-file-excel"></i> Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="exportToTxt()" title="导出为纯文本">
+                                <i class="bi bi-file-text"></i> TXT
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="exportToCSV()" title="导出为CSV文件">
+                                <i class="bi bi-filetype-csv"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="correlation-table-output"></div>
+    </div>
+</div>
+
+<script>
+// 相关性分析模块专用函数
+function initCorrelationModule(columns) {
+    const container = document.getElementById('correlation-var-container');
+    container.innerHTML = '';
+    columns.forEach(col => {
+        container.innerHTML += `
+            <div class="form-check">
+                <input class="form-check-input correlation-var-box" type="checkbox" value="${col}" id="corr-var-${col}">
+                <label class="form-check-label small text-truncate" for="corr-var-${col}">${col}</label>
+            </div>
+        `;
+    });
+}
+
+function runCorrelationAnalysis() {
+    const btn = document.getElementById('btn-correlation-run');
+    const spinner = btn.querySelector('.spinner-border');
+    
+    // 收集选中的变量
+    const selectedVars = Array.from(document.querySelectorAll('.correlation-var-box:checked')).map(e => e.value);
+    if (selectedVars.length < 2) {
+        alert("请至少选择两个变量进行相关性分析");
+        return;
+    }
+    
+    // 收集格式设置
+    const decimals = document.getElementById('correlation-decimal-input').value;
+    const tableTitle = document.getElementById('correlation-title').value;
+    
+    const payload = {
+        action: 'new',
+        filename: window.currentFilename,
+        method: 'corr',
+        x_vars: selectedVars,
+        decimals: decimals,
+        table_title: tableTitle
+    };
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    fetch('/analyze', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert("分析错误: " + data.error);
+        } else {
+            document.getElementById('correlation-table-output').innerHTML = data.html_table;
+            document.getElementById('correlation-result-container').style.display = 'block';
+            toggleModulePanel('correlation', false);
+        }
+    })
+    .catch(e => alert("服务器错误: " + e))
+    .finally(() => {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+    });
+}
+</script>

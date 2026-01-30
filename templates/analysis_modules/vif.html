@@ -1,0 +1,164 @@
+<!-- VIF共线性检验模块 -->
+<div id="module-vif" class="analysis-module">
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h6 class="m-0 text-primary fw-bold">⚠️ VIF 共线性检验配置</h6>
+            <button class="btn btn-sm btn-light" onclick="toggleModulePanel('vif')">折叠/展开</button>
+        </div>
+        <div class="card-body" id="vif-config-body">
+            <!-- 变量选择 -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label class="small fw-bold">请选择检验变量 (多选) <span class="text-danger">*</span></label>
+                    <div id="vif-var-container" class="var-list-container" style="height: 200px;">
+                        <!-- 动态填充变量列表 -->
+                    </div>
+                    <small class="text-muted">选择需要检验多重共线性的自变量（至少2个）</small>
+                </div>
+            </div>
+
+            <hr class="my-3">
+
+            <!-- 格式设置 -->
+            <div class="accordion mb-3" id="vifAdvAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed py-2 bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#vifAdvConfig">
+                            ⚙️ 格式设置
+                        </button>
+                    </h2>
+                    <div id="vifAdvConfig" class="accordion-collapse collapse">
+                        <div class="accordion-body py-2">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <label class="small">数值小数位</label>
+                                    <input type="number" id="vif-decimal-input" class="form-control form-control-sm" value="3" min="1" max="6">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="small">表格标题</label>
+                                    <input type="text" id="vif-title" class="form-control form-control-sm" value="VIF 共线性检验">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 说明信息 -->
+            <div class="alert alert-info py-2 small">
+                <i class="bi bi-info-circle"></i> 
+                <strong>VIF判断标准：</strong><br>
+                • VIF < 5：无共线性问题<br>
+                • 5 ≤ VIF < 10：中度共线性<br>
+                • VIF ≥ 10：严重共线性，建议剔除该变量
+            </div>
+
+            <!-- 运行按钮 -->
+            <div class="d-flex gap-2 mt-3">
+                <button class="btn btn-primary btn-sm flex-grow-1" id="btn-vif-run" onclick="runVIFAnalysis()">
+                    <span class="spinner-border spinner-border-sm d-none"></span>
+                    <span class="btn-text">执行VIF检验</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 结果展示区 -->
+    <div id="vif-result-container" style="display:none; padding-bottom: 50px;">
+        <div class="d-flex justify-content-center gap-3 mb-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleModulePanel('vif', true)">重新配置</button>
+        </div>
+        
+        <!-- 导出按钮组 -->
+        <div id="export-buttons-vif" class="my-3">
+            <div class="card shadow-sm">
+                <div class="card-body py-2">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <strong><i class="bi bi-download"></i> 导出结果</strong>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" onclick="exportToWord()" title="导出为Word文档">
+                                <i class="bi bi-file-word"></i> Word
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="exportToExcel()" title="导出为Excel表格">
+                                <i class="bi bi-file-excel"></i> Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="exportToTxt()" title="导出为纯文本">
+                                <i class="bi bi-file-text"></i> TXT
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="exportToCSV()" title="导出为CSV文件">
+                                <i class="bi bi-filetype-csv"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="vif-table-output"></div>
+    </div>
+</div>
+
+<script>
+// VIF检验模块专用函数
+function initVIFModule(columns) {
+    const container = document.getElementById('vif-var-container');
+    container.innerHTML = '';
+    columns.forEach(col => {
+        container.innerHTML += `
+            <div class="form-check">
+                <input class="form-check-input vif-var-box" type="checkbox" value="${col}" id="vif-var-${col}">
+                <label class="form-check-label small text-truncate" for="vif-var-${col}">${col}</label>
+            </div>
+        `;
+    });
+}
+
+function runVIFAnalysis() {
+    const btn = document.getElementById('btn-vif-run');
+    const spinner = btn.querySelector('.spinner-border');
+    
+    // 收集选中的变量
+    const selectedVars = Array.from(document.querySelectorAll('.vif-var-box:checked')).map(e => e.value);
+    if (selectedVars.length < 2) {
+        alert("请至少选择两个变量进行VIF检验");
+        return;
+    }
+    
+    // 收集格式设置
+    const decimals = document.getElementById('vif-decimal-input').value;
+    const tableTitle = document.getElementById('vif-title').value;
+    
+    const payload = {
+        action: 'new',
+        filename: window.currentFilename,
+        method: 'vif',
+        x_vars: selectedVars,
+        decimals: decimals,
+        table_title: tableTitle
+    };
+    
+    btn.disabled = true;
+    spinner.classList.remove('d-none');
+    
+    fetch('/analyze', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            alert("分析错误: " + data.error);
+        } else {
+            document.getElementById('vif-table-output').innerHTML = data.html_table;
+            document.getElementById('vif-result-container').style.display = 'block';
+            toggleModulePanel('vif', false);
+        }
+    })
+    .catch(e => alert("服务器错误: " + e))
+    .finally(() => {
+        btn.disabled = false;
+        spinner.classList.add('d-none');
+    });
+}
+</script>

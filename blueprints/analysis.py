@@ -25,14 +25,13 @@ STATAU 数据分析蓝图 (blueprints/analysis.py)
 ================================================================================
 """
 
-from flask import Blueprint, request, jsonify, current_app, session
+from flask import Blueprint, request, jsonify, current_app
 
 # 导入服务层
 from services.file_service import FileService
-from flask_session import Session
 
 # 导入核心分析模块
-from core.models import StataModel,ModelTests
+from core.models import StataModel, ModelTests
 from core.table_generator import generate_merged_html
 
 # ------------------------------------------------------------------------
@@ -51,7 +50,7 @@ analysis_bp = Blueprint(
 #   - 这是本地开发版的实现方式
 #   - 服务器部署时应改用 session 存储（见注释代码）
 # ------------------------------------------------------------------------
-# RESULT_CACHE = {}
+RESULT_CACHE = {}
 
 
 # ============================================================================
@@ -141,12 +140,12 @@ def upload_file():
     # ------------------------------------------------------------------------
     # 4. 清空之前的结果缓存
     # ------------------------------------------------------------------------
-    # client_id = get_client_id()
-    # RESULT_CACHE[client_id] = []
+    client_id = get_client_id()
+    RESULT_CACHE[client_id] = []
     
     # 服务器版（勿删）：
-    session['analysis_results'] = []
-    session.modified = True
+    # session['analysis_results'] = []
+    # session.modified = True
     
     return jsonify({
         'message': 'Success',
@@ -228,6 +227,15 @@ def analyze():
     # 导出选项
     export_options = data.get('export_options', [])
     
+    # 频数统计合并选项
+    merge_freq_tables = data.get('merge_freq_tables', False)
+    
+    # 频数统计确认标志（用户已确认大数据量警告）
+    freq_confirmed = data.get('freq_confirmed', False)
+    
+    # 分组变量（用于分组描述性统计）
+    group_var = data.get('group_var')
+    
     # ------------------------------------------------------------------------
     # 2. 读取数据文件
     # ------------------------------------------------------------------------
@@ -237,6 +245,29 @@ def analyze():
         df = file_service.read_datafile_by_name(filename)
     except Exception as e:
         return jsonify({'error': f'文件读取失败: {str(e)}'}), 500
+    
+    # ------------------------------------------------------------------------
+    # 2.5 频数统计预检查（检查分类数量）
+    # ------------------------------------------------------------------------
+    if method == 'freq' and not freq_confirmed:
+        # 检查每个变量的唯一值数量
+        warnings = []
+        for var in x_vars:
+            if var in df.columns:
+                unique_count = df[var].nunique()
+                if unique_count > 10000:
+                    warnings.append({
+                        'variable': var,
+                        'unique_count': unique_count
+                    })
+        
+        # 如果有变量超过10000个分类，返回警告
+        if warnings:
+            return jsonify({
+                'warning': 'large_categories',
+                'message': '检测到以下变量的分类数量超过10000，生成频数表可能需要较长时间：',
+                'details': warnings
+            }), 200
     
     # ------------------------------------------------------------------------
     # 3. 处理手动输入的控制变量
@@ -255,7 +286,9 @@ def analyze():
             panel_ids={'entity': panel_entity, 'time': panel_time},
             fe_vars=fe_vars,
             se_options=se_options,
-            desc_options=export_options
+            desc_options=export_options,
+            merge_freq_tables=merge_freq_tables,
+            group_var=group_var
         )
         result_obj = model_runner.fit(decimals=decimals, table_title=user_title)
         
@@ -285,33 +318,35 @@ def analyze():
             'y_name': y_var,
             'method': method,
             'se_type': se_options['type'],
-            'custom_rows': custom_rows
+            'custom_rows': custom_rows,
+            'panel_entity': panel_entity,
+            'panel_time': panel_time
         }
         
         # --------------------------------------------------------------------
         # 4.3 更新结果缓存
         # --------------------------------------------------------------------
         # 本地版
-        # if action == 'new':
-        #     RESULT_CACHE[client_id] = [model_data]
-        # elif action == 'append':
-        #     if client_id not in RESULT_CACHE:
-        #         RESULT_CACHE[client_id] = []
-        #     RESULT_CACHE[client_id].append(model_data)
+        if action == 'new':
+            RESULT_CACHE[client_id] = [model_data]
+        elif action == 'append':
+            if client_id not in RESULT_CACHE:
+                RESULT_CACHE[client_id] = []
+            RESULT_CACHE[client_id].append(model_data)
         
-        # current_models = RESULT_CACHE[client_id]
+        current_models = RESULT_CACHE[client_id]
         
         # 服务器版（勿删）：
-        if 'analysis_results' not in session:
-            session['analysis_results'] = []
-        if action == 'new':
-            session['analysis_results'] = [model_data]
-        elif action == 'append':
-            current_list = session['analysis_results']
-            current_list.append(model_data)
-            session['analysis_results'] = current_list
-        session.modified = True
-        current_models = session['analysis_results']
+        # if 'analysis_results' not in session:
+        #     session['analysis_results'] = []
+        # if action == 'new':
+        #     session['analysis_results'] = [model_data]
+        # elif action == 'append':
+        #     current_list = session['analysis_results']
+        #     current_list.append(model_data)
+        #     session['analysis_results'] = current_list
+        # session.modified = True
+        # current_models = session['analysis_results']
         
         # --------------------------------------------------------------------
         # 4.4 生成 HTML 表格
@@ -327,7 +362,7 @@ def analyze():
         # --------------------------------------------------------------------
         # 4.5 生成原始输出
         # --------------------------------------------------------------------
-        if method == 'fe':
+        if method in ['fe', 're', 'pooled']:
             # linearmodels 库：summary 是属性
             raw_output = str(result_obj.summary)
         else:
@@ -363,12 +398,12 @@ def clear_table():
     说明:
         清空当前用户的所有分析结果缓存
     """
-    # client_id = get_client_id()
-    # RESULT_CACHE[client_id] = []
+    client_id = get_client_id()
+    RESULT_CACHE[client_id] = []
     
     # 服务器版（勿删）：
-    session['analysis_results'] = []
-    session.modified = True
+    # session['analysis_results'] = []
+    # session.modified = True
     
     return jsonify({'status': 'cleared'})
 
@@ -573,4 +608,4 @@ def hausman_test():
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500        
+        return jsonify({'error': str(e)}), 500

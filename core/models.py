@@ -90,7 +90,9 @@ class StataModel:
         panel_ids: Optional[Dict[str, str]] = None,
         fe_vars: Optional[List[str]] = None,
         se_options: Optional[Dict[str, Any]] = None,
-        desc_options: Optional[List[str]] = None
+        desc_options: Optional[List[str]] = None,
+        merge_freq_tables: bool = False,
+        group_var: Optional[str] = None
     ):
         """
         初始化统计模型
@@ -99,11 +101,13 @@ class StataModel:
             data: 数据框
             y_var: 因变量名
             x_vars: 自变量列表
-            method: 分析方法 ('ols', 'fe', 'logit', 'probit', 'desc', 'corr', 'vif')
+            method: 分析方法 ('ols', 'fe', 'logit', 'probit', 'desc', 'corr', 'vif', 'freq', 'grouped_desc')
             panel_ids: 面板数据标识
             fe_vars: 固定效应变量列表
             se_options: 标准误选项
             desc_options: 描述统计选项
+            merge_freq_tables: 是否合并频数统计表
+            group_var: 分组变量（用于分组描述性统计）
         """
         self.data = data
         self.y_var = y_var
@@ -113,6 +117,8 @@ class StataModel:
         self.fe_vars = fe_vars or []
         self.se_options = se_options or {'type': 'iid'}
         self.desc_options = desc_options or ['mean', 'std', 'min', 'max']
+        self.merge_freq_tables = merge_freq_tables
+        self.group_var = group_var
         
         # 结果存储
         self.result = None
@@ -135,9 +141,9 @@ class StataModel:
             模型拟合结果对象（回归模型）或 self（描述统计等）
         """
         # --------------------------------------------------------------------
-        # 分支 1: 基础分析 (Desc, Corr, VIF)
+        # 分支 1: 基础分析 (Desc, Corr, VIF, Freq, Grouped_Desc)
         # --------------------------------------------------------------------
-        if self.method in ['desc', 'corr', 'vif']:
+        if self.method in ['desc', 'corr', 'vif', 'freq', 'grouped_desc']:
             return self._fit_basic_analysis(decimals, table_title)
         
         # --------------------------------------------------------------------
@@ -164,7 +170,17 @@ class StataModel:
         if not target_cols:
             raise ValueError("未选择任何变量。")
         
-        # 筛选有效列并清洗数据
+        # 频数统计不需要只选择数值列，可以处理所有类型的列
+        if self.method == 'freq':
+            self._fit_frequency(self.data, decimals, table_title)
+            return self
+        
+        # 分组描述性统计
+        if self.method == 'grouped_desc':
+            self._fit_grouped_descriptive(self.data, decimals, table_title)
+            return self
+        
+        # 其他分析方法需要筛选数值列并清洗数据
         valid_cols = [c for c in target_cols if c in self.data.columns]
         df_clean = self.data[valid_cols].select_dtypes(include=[np.number]).dropna()
         
@@ -194,7 +210,7 @@ class StataModel:
         
         # 列名映射
         col_map = {
-            'count': 'Count', 'mean': 'Mean', 'std': 'Std.Dev',
+            'count': 'N', 'mean': 'Mean', 'std': 'Std.Dev',
             'min': 'Min', 'max': 'Max', 'p50': 'Median'
         }
         
@@ -203,21 +219,199 @@ class StataModel:
         rename_map = {}
         
         for opt in self.desc_options:
+            # 将nobs映射为count
+            if opt == 'nobs':
+                opt = 'count'
             # Pandas describe 输出的百分位数键名是 '50%'
             pd_key = '50%' if opt == 'p50' else opt
             if pd_key in desc.columns:
-                final_cols.append(pd_key)
-                rename_map[pd_key] = col_map.get(opt, opt)
+                if pd_key not in final_cols:  # 避免重复添加
+                    final_cols.append(pd_key)
+                    rename_map[pd_key] = col_map.get(opt, opt)
         
         final_df = desc[final_cols].rename(columns=rename_map)
         
-        # Count 列转为整数
-        if 'Count' in final_df.columns:
-            final_df['Count'] = final_df['Count'].astype(int)
+        # N 列转为整数
+        if 'N' in final_df.columns:
+            final_df['N'] = final_df['N'].astype(int)
         
         # 生成 HTML
         title = title if title else "Descriptive Statistics"
         self.custom_html = self._generate_html_table(final_df, title, decimals=decimals)
+    
+    def _fit_grouped_descriptive(self, df: pd.DataFrame, decimals: int, title: str) -> None:
+        """
+        执行分组描述性统计分析
+        
+        参数:
+            df: 数据框
+            decimals: 小数位数
+            title: 表格标题
+        """
+        if not self.group_var:
+            raise ValueError("未指定分组变量。")
+        
+        if self.group_var not in df.columns:
+            raise ValueError(f"分组变量 '{self.group_var}' 不存在于数据中。")
+        
+        # 检查分析变量
+        target_cols = self.x_vars
+        if not target_cols:
+            raise ValueError("未选择任何分析变量。")
+        
+        # 筛选数值列
+        valid_cols = [c for c in target_cols if c in df.columns]
+        numeric_cols = [c for c in valid_cols if df[c].dtype in [np.float64, np.float32, np.int64, np.int32]]
+        
+        if not numeric_cols:
+            raise ValueError("没有可用的数值型变量进行描述性统计。")
+        
+        # 只删除分组变量的缺失值，保留分析变量的缺失值
+        df_clean = df[[self.group_var] + numeric_cols].dropna(subset=[self.group_var])
+        
+        if df_clean.empty:
+            raise ValueError("清洗后的数据为空。")
+        
+        # 按分组变量分组计算描述性统计
+        grouped = df_clean.groupby(self.group_var)
+        
+        # 为每个分组构建独立的结果表格
+        group_tables = []
+        
+        for group_name, group_data in grouped:
+            group_results = []
+            
+            for var in numeric_cols:
+                # 对每个变量单独处理缺失值
+                var_data = group_data[var].dropna()
+                
+                row_dict = {'Variable': var}
+                
+                # 如果该变量在该分组中全是缺失值，只显示N=0，其他统计量不显示
+                if len(var_data) == 0:
+                    if 'nobs' in self.desc_options or 'count' in self.desc_options:
+                        row_dict['N'] = 0
+                    # 其他统计量设置为空字符串（不显示）
+                    if 'mean' in self.desc_options:
+                        row_dict['Mean'] = ''
+                    if 'std' in self.desc_options:
+                        row_dict['Std.Dev'] = ''
+                    if 'min' in self.desc_options:
+                        row_dict['Min'] = ''
+                    if 'max' in self.desc_options:
+                        row_dict['Max'] = ''
+                    if 'p50' in self.desc_options:
+                        row_dict['Median'] = ''
+                else:
+                    # 有有效数据，正常计算统计量
+                    if 'nobs' in self.desc_options or 'count' in self.desc_options:
+                        row_dict['N'] = len(var_data)
+                    if 'mean' in self.desc_options:
+                        row_dict['Mean'] = var_data.mean()
+                    if 'std' in self.desc_options:
+                        row_dict['Std.Dev'] = var_data.std()
+                    if 'min' in self.desc_options:
+                        row_dict['Min'] = var_data.min()
+                    if 'max' in self.desc_options:
+                        row_dict['Max'] = var_data.max()
+                    if 'p50' in self.desc_options:
+                        row_dict['Median'] = var_data.median()
+                
+                group_results.append(row_dict)
+            
+            # 如果该分组有有效数据，添加到结果中
+            if group_results:
+                group_df = pd.DataFrame(group_results)
+                group_tables.append({
+                    'group_name': str(group_name),
+                    'data': group_df
+                })
+        
+        # 生成HTML（竖式布局，每个分组一个表格）
+        title = title if title else f"Grouped Descriptive Statistics by {self.group_var}"
+        self.custom_html = self._generate_grouped_descriptive_html_vertical(
+            group_tables, title, decimals, self.group_var
+        )
+    
+    def _generate_grouped_descriptive_html_vertical(
+        self,
+        group_tables: list,
+        title: str,
+        decimals: int,
+        group_var: str
+    ) -> str:
+        """
+        生成分组描述性统计的HTML表格（竖式布局）
+        
+        参数:
+            group_tables: 分组表格列表，每个元素包含 {'group_name': ..., 'data': DataFrame}
+            title: 表格标题
+            decimals: 小数位数
+            group_var: 分组变量名
+        
+        返回:
+            HTML字符串
+        """
+        if not group_tables:
+            return '<div class="alert alert-warning">没有可显示的数据</div>'
+        
+        html_parts = []
+        
+        for group_info in group_tables:
+            group_name = group_info['group_name']
+            df = group_info['data']
+            
+            # 每个分组一个独立的表格
+            html = f'<div class="table-editable-container" style="margin-bottom: 30px;">'
+            
+            # 分组标题
+            group_title = f"{group_var} = {group_name}"
+            html += f'<h6 style="text-align: center; font-weight: bold; margin-bottom: 10px;">{group_title}</h6>'
+            
+            html += '<table class="academic-table" style="width: auto; margin: 0 auto; min-width: 50%;">'
+            
+            # 表头
+            html += '<thead><tr>'
+            html += '<th style="border-bottom: 1px solid black; text-align: left;">Variable</th>'
+            
+            # 动态添加统计量列
+            stat_cols = [col for col in df.columns if col != 'Variable']
+            for col in stat_cols:
+                html += f'<th style="border-bottom: 1px solid black; text-align: center;">{col}</th>'
+            
+            html += '</tr></thead><tbody>'
+            
+            # 内容
+            for idx, row in df.iterrows():
+                html += '<tr>'
+                html += f'<td style="text-align: left;">{row["Variable"]}</td>'
+                
+                # 统计量
+                for col in stat_cols:
+                    val = row[col]
+                    if val == '' or val is None or (isinstance(val, float) and np.isnan(val)):
+                        # 空值或缺失值，显示为空
+                        html += '<td style="text-align: center;">-</td>'
+                    elif col == 'N':
+                        html += f'<td style="text-align: center;">{int(val)}</td>'
+                    else:
+                        html += f'<td style="text-align: center;">{val:.{decimals}f}</td>'
+                
+                html += '</tr>'
+            
+            html += '</tbody>'
+            html += '<tfoot><tr><td colspan="' + str(len(df.columns)) + '" style="border-top: 1px solid black;"></td></tr></tfoot>'
+            html += '</table></div>'
+            
+            html_parts.append(html)
+        
+        # 添加总标题
+        final_html = f'<div class="table-editable-container">'
+        final_html += f'<input type="text" class="table-title-input" value="{title}" style="margin-bottom: 20px;" />'
+        final_html += '</div>'
+        final_html += ''.join(html_parts)
+        
+        return final_html
     
     def _fit_correlation(self, df: pd.DataFrame, decimals: int, title: str) -> None:
         """
@@ -319,6 +513,310 @@ class StataModel:
         title = title if title else "Variance Inflation Factor"
         self.custom_html = self._generate_html_table(vif_df, title, index_name=None)
     
+    def _fit_frequency(self, df: pd.DataFrame, decimals: int, title: str) -> None:
+        """
+        执行频数统计分析（类似Stata的tab命令）
+        
+        参数:
+            df: 清洗后的数据框
+            decimals: 小数位数
+            title: 表格标题
+        """
+        # 对于频数统计，我们不需要只选择数值列，可以处理分类变量
+        # 重新从原始数据中获取选中的列（包括非数值列）
+        target_cols = self.x_vars
+        valid_cols = [c for c in target_cols if c in self.data.columns]
+        
+        if not valid_cols:
+            raise ValueError("未选择任何有效变量。")
+        
+        # 如果只选择了一个变量，生成单变量频数表
+        if len(valid_cols) == 1:
+            self._fit_frequency_single(valid_cols[0], decimals, title)
+        else:
+            # 如果选择了多个变量，根据merge_freq_tables参数决定是否合并
+            if self.merge_freq_tables:
+                self._fit_frequency_merged(valid_cols, decimals, title)
+            else:
+                self._fit_frequency_multiple(valid_cols, decimals, title)
+    
+    def _fit_frequency_single(self, var: str, decimals: int, title: str) -> None:
+        """
+        生成单变量频数统计表
+        
+        参数:
+            var: 变量名
+            decimals: 小数位数
+            title: 表格标题
+        """
+        # 获取变量数据（删除缺失值）
+        data_series = self.data[var].dropna()
+        
+        if len(data_series) == 0:
+            raise ValueError(f"变量 {var} 没有有效数据。")
+        
+        # 计算频数
+        freq_counts = data_series.value_counts().sort_index()
+        total = len(data_series)
+        
+        # 构建频数表
+        freq_data = []
+        cumulative_freq = 0
+        cumulative_pct = 0.0
+        
+        for value, count in freq_counts.items():
+            freq = int(count)
+            percent = (count / total) * 100
+            cumulative_freq += freq
+            cumulative_pct += percent
+            
+            freq_data.append({
+                'Value': str(value),
+                'Freq.': freq,
+                'Percent': f"{percent:.{decimals}f}",
+                'Cum.': f"{cumulative_pct:.{decimals}f}"
+            })
+        
+        # 添加总计行
+        freq_data.append({
+            'Value': 'Total',
+            'Freq.': total,
+            'Percent': f"{100.0:.{decimals}f}",
+            'Cum.': f"{100.0:.{decimals}f}"
+        })
+        
+        freq_df = pd.DataFrame(freq_data)
+        title = title if title else f"Frequency Table: {var}"
+        
+        # 生成HTML（使用自定义样式，Total行加粗边框）
+        self.custom_html = self._generate_frequency_html(freq_df, title, var)
+    
+    def _fit_frequency_multiple(self, vars: List[str], decimals: int, title: str) -> None:
+        """
+        生成多变量频数统计表（每个变量一个表格）
+        
+        参数:
+            vars: 变量列表
+            decimals: 小数位数
+            title: 表格标题
+        """
+        html_parts = []
+        
+        for var in vars:
+            try:
+                # 获取变量数据（删除缺失值）
+                data_series = self.data[var].dropna()
+                
+                if len(data_series) == 0:
+                    continue
+                
+                # 计算频数
+                freq_counts = data_series.value_counts().sort_index()
+                total = len(data_series)
+                
+                # 构建频数表
+                freq_data = []
+                cumulative_freq = 0
+                cumulative_pct = 0.0
+                
+                for value, count in freq_counts.items():
+                    freq = int(count)
+                    percent = (count / total) * 100
+                    cumulative_freq += freq
+                    cumulative_pct += percent
+                    
+                    freq_data.append({
+                        'Value': str(value),
+                        'Freq.': freq,
+                        'Percent': f"{percent:.{decimals}f}",
+                        'Cum.': f"{cumulative_pct:.{decimals}f}"
+                    })
+                
+                # 添加总计行
+                freq_data.append({
+                    'Value': 'Total',
+                    'Freq.': total,
+                    'Percent': f"{100.0:.{decimals}f}",
+                    'Cum.': f"{100.0:.{decimals}f}"
+                })
+                
+                freq_df = pd.DataFrame(freq_data)
+                var_title = f"Frequency Table: {var}"
+                
+                # 生成单个表格的HTML
+                html_parts.append(self._generate_frequency_html(freq_df, var_title, var))
+            
+            except Exception as e:
+                # 如果某个变量出错，跳过并继续
+                continue
+        
+        # 合并所有表格
+        if html_parts:
+            self.custom_html = '<div style="margin-bottom: 30px;">' + '</div><div style="margin-bottom: 30px;">'.join(html_parts) + '</div>'
+        else:
+            raise ValueError("没有生成任何有效的频数表。")
+    
+    def _fit_frequency_merged(self, vars: List[str], decimals: int, title: str) -> None:
+        """
+        生成合并的多变量频数统计表
+        
+        参数:
+            vars: 变量列表
+            decimals: 小数位数
+            title: 表格标题
+        """
+        # 收集所有变量的频数数据
+        merged_data = []
+        
+        for var in vars:
+            try:
+                # 获取变量数据（删除缺失值）
+                data_series = self.data[var].dropna()
+                
+                if len(data_series) == 0:
+                    continue
+                
+                # 计算频数
+                freq_counts = data_series.value_counts().sort_index()
+                total = len(data_series)
+                
+                # 构建频数数据
+                cumulative_pct = 0.0
+                
+                for value, count in freq_counts.items():
+                    freq = int(count)
+                    percent = (count / total) * 100
+                    cumulative_pct += percent
+                    
+                    merged_data.append({
+                        'Variable': var,
+                        'Value': str(value),
+                        'Freq.': freq,
+                        'Percent': f"{percent:.{decimals}f}",
+                        'Cum.': f"{cumulative_pct:.{decimals}f}"
+                    })
+                
+                # 添加每个变量的小计行
+                merged_data.append({
+                    'Variable': var,
+                    'Value': 'Subtotal',
+                    'Freq.': total,
+                    'Percent': f"{100.0:.{decimals}f}",
+                    'Cum.': f"{100.0:.{decimals}f}"
+                })
+            
+            except Exception as e:
+                # 如果某个变量出错，跳过并继续
+                continue
+        
+        if not merged_data:
+            raise ValueError("没有生成任何有效的频数表。")
+        
+        # 生成合并的HTML表格
+        merged_df = pd.DataFrame(merged_data)
+        title = title if title else "Merged Frequency Table"
+        self.custom_html = self._generate_merged_frequency_html(merged_df, title, decimals)
+    
+    def _generate_merged_frequency_html(self, df: pd.DataFrame, title: str, decimals: int) -> str:
+        """
+        生成合并频数表的HTML
+        
+        参数:
+            df: 合并的频数数据框
+            title: 表格标题
+            decimals: 小数位数
+        
+        返回:
+            HTML字符串
+        """
+        html = f'<div class="table-editable-container">'
+        html += f'<input type="text" class="table-title-input" value="{title}" />'
+        html += '<table class="academic-table" style="width: auto; margin: 0 auto; min-width: 60%;">'
+        
+        # 表头
+        html += '<thead><tr>'
+        html += '<th style="border-bottom: 1px solid black; text-align: left;">Variable</th>'
+        html += '<th style="border-bottom: 1px solid black; text-align: left;">Value</th>'
+        html += '<th style="border-bottom: 1px solid black; text-align: center;">Freq.</th>'
+        html += '<th style="border-bottom: 1px solid black; text-align: center;">Percent</th>'
+        html += '<th style="border-bottom: 1px solid black; text-align: center;">Cum.</th>'
+        html += '</tr></thead><tbody>'
+        
+        # 内容
+        current_var = None
+        for idx, row in df.iterrows():
+            var_name = row['Variable']
+            value = row['Value']
+            
+            # Subtotal 行加粗边框区分
+            if value == 'Subtotal':
+                row_style = "border-top: 1px solid black; font-weight: bold;"
+            else:
+                row_style = ""
+            
+            html += f'<tr style="{row_style}">'
+            
+            # 变量名只在第一次出现时显示，或者在Subtotal行显示
+            if value == 'Subtotal' or var_name != current_var:
+                html += f'<td style="text-align: left;">{var_name}</td>'
+                current_var = var_name
+            else:
+                html += '<td style="text-align: left;"></td>'
+            
+            html += f'<td style="text-align: left;">{value}</td>'
+            html += f'<td style="text-align: center;">{row["Freq."]}</td>'
+            html += f'<td style="text-align: center;">{row["Percent"]}</td>'
+            html += f'<td style="text-align: center;">{row["Cum."]}</td>'
+            html += '</tr>'
+        
+        html += '</tbody>'
+        html += '<tfoot><tr><td colspan="5" style="border-top: 1px solid black;"></td></tr></tfoot>'
+        html += '</table></div>'
+        
+        return html
+    
+    def _generate_frequency_html(self, df: pd.DataFrame, title: str, var_name: str) -> str:
+        """
+        生成频数表的HTML
+        
+        参数:
+            df: 频数数据框
+            title: 表格标题
+            var_name: 变量名
+        
+        返回:
+            HTML字符串
+        """
+        html = f'<div class="table-editable-container">'
+        html += f'<input type="text" class="table-title-input" value="{title}" />'
+        html += '<table class="academic-table" style="width: auto; margin: 0 auto; min-width: 50%;">'
+        
+        # 表头
+        html += '<thead><tr>'
+        html += f'<th style="border-bottom: 1px solid black; text-align: left;">{var_name}</th>'
+        html += '<th style="border-bottom: 1px solid black; text-align: center;">Freq.</th>'
+        html += '<th style="border-bottom: 1px solid black; text-align: center;">Percent</th>'
+        html += '<th style="border-bottom: 1px solid black; text-align: center;">Cum.</th>'
+        html += '</tr></thead><tbody>'
+        
+        # 内容
+        for idx, row in df.iterrows():
+            # Total 行加粗边框区分
+            row_style = "border-top: 1px solid black; font-weight: bold;" if row['Value'] == 'Total' else ""
+            
+            html += f'<tr style="{row_style}">'
+            html += f'<td style="text-align: left;">{row["Value"]}</td>'
+            html += f'<td style="text-align: center;">{row["Freq."]}</td>'
+            html += f'<td style="text-align: center;">{row["Percent"]}</td>'
+            html += f'<td style="text-align: center;">{row["Cum."]}</td>'
+            html += '</tr>'
+        
+        html += '</tbody>'
+        html += '<tfoot><tr><td colspan="4" style="border-top: 1px solid black;"></td></tr></tfoot>'
+        html += '</table></div>'
+        
+        return html
+    
     # ========================================================================
     # 回归分析方法
     # ========================================================================
@@ -353,6 +851,10 @@ class StataModel:
         # 根据方法类型执行不同回归
         if self.method == 'fe':
             return self._fit_fixed_effects(df_clean, entity_col, time_col)
+        elif self.method == 're':
+            return self._fit_random_effects(df_clean, entity_col, time_col)
+        elif self.method == 'pooled':
+            return self._fit_pooled_ols(df_clean, entity_col, time_col)
         else:
             return self._fit_standard_regression(df_clean)
     
@@ -446,6 +948,154 @@ class StataModel:
         self.model_stats = {
             'N': int(nobs),
             'R2': r2_inclusive,
+            'Adj-R2': adj_r2,
+            'F': self.result.f_statistic.stat
+        }
+        
+        return self.result
+    
+    def _fit_random_effects(
+        self,
+        df: pd.DataFrame,
+        entity_col: str,
+        time_col: str
+    ) -> Any:
+        """
+        执行随机效应回归
+        
+        参数:
+            df: 清洗后的数据框
+            entity_col: 个体标识列
+            time_col: 时间标识列
+        
+        返回:
+            RandomEffects 拟合结果
+        """
+        if not entity_col or not time_col:
+            raise ValueError("RE Model needs Entity and Time ID")
+        
+        # 剔除 singleton
+        df = drop_singletons_func(df, entity_col)
+        
+        # 设置面板索引
+        df_panel = df.set_index([entity_col, time_col])
+        y = df_panel[self.y_var]
+        
+        # 准备自变量（随机效应模型需要常数项）
+        exog_cols = [v for v in self.x_vars if v != self.y_var]
+        if not exog_cols:
+            df_panel['const'] = 1
+            x = df_panel[['const']]
+        else:
+            x = add_constant(df_panel[exog_cols])
+        
+        # 创建随机效应模型
+        mod = RandomEffects(y, x)
+        
+        # 配置标准误
+        se_type = self.se_options.get('type')
+        fit_kwargs = {}
+        
+        if se_type == 'robust':
+            fit_kwargs['cov_type'] = 'robust'
+        elif se_type == 'cluster':
+            fit_kwargs['cov_type'] = 'clustered'
+            c_var = self.se_options.get('cluster_var')
+            if c_var == entity_col:
+                fit_kwargs['cluster_entity'] = True
+            elif c_var == time_col:
+                fit_kwargs['cluster_time'] = True
+            else:
+                fit_kwargs['clusters'] = df_panel[c_var]
+        else:
+            fit_kwargs['cov_type'] = 'unadjusted'
+        
+        # 拟合模型
+        self.result = mod.fit(**fit_kwargs)
+        
+        # 计算统计量
+        r2_overall = self.result.rsquared_overall
+        nobs = self.result.nobs
+        df_resid = self.result.df_resid
+        adj_r2 = 1 - (1 - r2_overall) * (nobs - 1) / df_resid if df_resid > 0 else np.nan
+        
+        self.model_stats = {
+            'N': int(nobs),
+            'R2': r2_overall,
+            'Adj-R2': adj_r2,
+            'F': self.result.f_statistic.stat
+        }
+        
+        return self.result
+    
+    def _fit_pooled_ols(
+        self,
+        df: pd.DataFrame,
+        entity_col: str,
+        time_col: str
+    ) -> Any:
+        """
+        执行混合OLS回归（面板数据的混合估计）
+        
+        参数:
+            df: 清洗后的数据框
+            entity_col: 个体标识列
+            time_col: 时间标识列
+        
+        返回:
+            PooledOLS 拟合结果
+        """
+        if not entity_col or not time_col:
+            raise ValueError("Pooled OLS Model needs Entity and Time ID")
+        
+        # 剔除 singleton
+        df = drop_singletons_func(df, entity_col)
+        
+        # 设置面板索引
+        df_panel = df.set_index([entity_col, time_col])
+        y = df_panel[self.y_var]
+        
+        # 准备自变量（混合OLS需要常数项）
+        exog_cols = [v for v in self.x_vars if v != self.y_var]
+        if not exog_cols:
+            df_panel['const'] = 1
+            x = df_panel[['const']]
+        else:
+            x = add_constant(df_panel[exog_cols])
+        
+        # 创建混合OLS模型
+        mod = PooledOLS(y, x)
+        
+        # 配置标准误
+        se_type = self.se_options.get('type')
+        fit_kwargs = {}
+        
+        if se_type == 'robust':
+            fit_kwargs['cov_type'] = 'robust'
+        elif se_type == 'cluster':
+            fit_kwargs['cov_type'] = 'clustered'
+            c_var = self.se_options.get('cluster_var')
+            if c_var == entity_col:
+                fit_kwargs['cluster_entity'] = True
+            elif c_var == time_col:
+                fit_kwargs['cluster_time'] = True
+            else:
+                fit_kwargs['clusters'] = df_panel[c_var]
+        else:
+            fit_kwargs['cov_type'] = 'unadjusted'
+        
+        # 拟合模型
+        self.result = mod.fit(**fit_kwargs)
+        
+        # 计算统计量
+        r2 = self.result.rsquared
+        nobs = self.result.nobs
+        df_resid = self.result.df_resid
+        adj_r2 = 1 - (1 - r2) * (nobs - 1) / df_resid if df_resid > 0 else np.nan
+        
+        self.model_stats = {
+            'N': int(nobs),
+            'R2': r2,
             'Adj-R2': adj_r2,
             'F': self.result.f_statistic.stat
         }
@@ -563,7 +1213,7 @@ class StataModel:
                     disp = val
                 # 如果是数字，应用 decimals
                 elif isinstance(val, (int, float)):
-                    if col in ('Count', 'N'):
+                    if col == 'N':
                         disp = f"{int(val)}"
                     else:
                         disp = f"{val:.{decimals}f}"
@@ -609,18 +1259,18 @@ class StataModel:
         if self.custom_html:
             return {}, {}
         
-        if self.method == 'fe':
-            return self._get_fe_coeffs(decimals, show_se)
+        if self.method in ['fe', 're', 'pooled']:
+            return self._get_panel_coeffs(decimals, show_se)
         else:
             return self._get_standard_coeffs(decimals, show_se)
     
-    def _get_fe_coeffs(
+    def _get_panel_coeffs(
         self,
         decimals: int,
         show_se: bool
     ) -> Tuple[Dict[str, Tuple[str, str]], Dict[str, Any]]:
         """
-        获取固定效应模型的系数
+        获取面板数据模型的系数（FE/RE/Pooled）
         """
         params = self.result.params
         std_errors = self.result.std_errors
