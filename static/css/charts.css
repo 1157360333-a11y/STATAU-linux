@@ -1,0 +1,275 @@
+/* ============================================
+   Charts and Data Visualization Styles
+   ============================================ */
+
+/* -------------------- Academic Table - Dark Theme -------------------- */
+.academic-table {
+    width: 100%;
+    background: var(--bg-secondary);
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    font-family: "Times New Roman", serif;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    margin: 0 auto;
+}
+
+.academic-table thead {
+    background: var(--bg-tertiary);
+}
+
+.academic-table th {
+    padding: 8px 12px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--accent-primary);
+    white-space: nowrap;
+}
+
+.academic-table td {
+    padding: 6px 12px;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.academic-table tbody tr:hover {
+    background: var(--bg-tertiary);
+}
+
+.academic-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Significance stars with glow effect */
+.academic-table sup {
+    color: var(--accent-primary);
+    text-shadow: 0 0 4px var(--accent-primary);
+    font-weight: bold;
+}
+
+/* Variable names in first column */
+.academic-table td:first-child {
+    text-align: left;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* -------------------- Table Container -------------------- */
+.table-editable-container {
+    text-align: center;
+    margin-top: 20px;
+    overflow-x: auto;
+    background: var(--bg-primary);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+}
+
+.table-title-input {
+    border: none;
+    background: transparent;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    width: 80%;
+    border-bottom: 1px dashed var(--border-color);
+    color: var(--text-primary);
+    margin-bottom: var(--space-md);
+}
+
+.table-title-input:focus {
+    outline: none;
+    border-bottom: 1px solid var(--accent-primary);
+}
+
+/* -------------------- Line-Style Charts -------------------- */
+.chart-line {
+    stroke-width: 2px;
+    fill: none;
+    stroke: var(--accent-primary);
+    filter: drop-shadow(0 0 8px var(--accent-primary));
+}
+
+.chart-area {
+    fill: var(--accent-primary);
+    opacity: 0.1;
+}
+
+.chart-point {
+    fill: var(--accent-primary);
+    stroke: var(--bg-primary);
+    stroke-width: 2px;
+}
+
+.chart-point:hover {
+    fill: white;
+    filter: drop-shadow(0 0 8px var(--accent-primary));
+}
+
+/* -------------------- Decorative Lines -------------------- */
+.deco-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+    margin: var(--space-lg) 0;
+}
+
+.deco-line-vertical {
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--accent-primary), transparent);
+}
+
+/* -------------------- Data Display Cards -------------------- */
+.data-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    transition: all var(--transition-base);
+}
+
+.data-card:hover {
+    border-color: var(--border-accent);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+}
+
+.data-value {
+    font-size: var(--text-4xl);
+    font-weight: 800;
+    color: var(--accent-primary);
+    text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+    font-family: var(--font-mono);
+}
+
+.data-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: var(--space-sm);
+}
+
+/* -------------------- Variable List Container -------------------- */
+.var-list-container {
+    border: 1px solid var(--border-color);
+    height: 160px;
+    overflow-y: auto;
+    background: var(--bg-tertiary);
+    padding: 10px;
+    border-radius: var(--radius-md);
+}
+
+.var-list-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.var-list-container::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+}
+
+.var-list-container::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: var(--radius-sm);
+}
+
+.var-list-container::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+/* -------------------- Statistics Display -------------------- */
+.stat-item {
+    text-align: center;
+    padding: var(--space-md);
+}
+
+.stat-number {
+    font-size: var(--text-5xl);
+    font-weight: 800;
+    color: var(--accent-primary);
+    text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+    line-height: 1;
+    font-family: var(--font-mono);
+}
+
+.stat-label {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: var(--space-sm);
+}
+
+/* -------------------- Export Buttons -------------------- */
+.export-buttons {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+    flex-wrap: wrap;
+}
+
+.btn-export {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.btn-export:hover {
+    background: var(--bg-elevated);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+.btn-export i {
+    font-size: 1em;
+}
+
+/* -------------------- Responsive Adjustments -------------------- */
+@media (max-width: 768px) {
+    .academic-table {
+        font-size: 0.85rem;
+    }
+
+    .academic-table th,
+    .academic-table td {
+        padding: 4px 8px;
+    }
+
+    .data-value {
+        font-size: var(--text-3xl);
+    }
+
+    .stat-number {
+        font-size: var(--text-4xl);
+    }
+}
+
+@media (max-width: 576px) {
+    .table-editable-container {
+        padding: var(--space-md);
+    }
+
+    .academic-table {
+        font-size: 0.75rem;
+    }
+
+    .data-value {
+        font-size: var(--text-2xl);
+    }
+
+    .stat-number {
+        font-size: var(--text-3xl);
+    }
+}

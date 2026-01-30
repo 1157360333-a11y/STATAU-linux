@@ -6,28 +6,90 @@
 <style>
     /* 分析页面全局布局 */
     .analysis-container { display: flex !important; flex-direction: row !important; height: calc(100vh - 56px); width: 100%; overflow: hidden; }
-    
+
     /* 左侧导航栏 */
-    #sidebar { width: 250px; background-color: #2c3e50; color: white; padding-top: 20px; overflow-y: auto; flex-shrink: 0; border-right: 1px solid #1a252f; }
-    .nav-link-sidebar { color: #bdc3c7; cursor: pointer; padding: 12px 20px; display: block; text-decoration: none; transition: 0.2s;}
-    .nav-link-sidebar:hover, .nav-link-sidebar.active { color: white; background-color: #34495e; border-left: 4px solid #1abc9c; }
-    .sidebar-header { font-size: 0.85rem; font-weight: bold; color: #6c757d; padding: 10px 20px 5px 20px; text-transform: uppercase; letter-spacing: 1px; }
+    #sidebar {
+        width: 250px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
+        padding-top: 20px;
+        overflow-y: auto;
+        flex-shrink: 0;
+        border-right: 1px solid var(--border-color);
+    }
+
+    .nav-link-sidebar {
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border-left: 2px solid transparent;
+    }
+
+    .nav-link-sidebar:hover {
+        color: var(--accent-primary);
+        background: var(--bg-tertiary);
+        border-left-color: var(--accent-primary);
+    }
+
+    .nav-link-sidebar.active {
+        color: var(--accent-primary);
+        background: var(--bg-elevated);
+        border-left-color: var(--accent-primary);
+        box-shadow: inset 0 0 20px rgba(0, 212, 255, 0.1);
+    }
+
+    .sidebar-header {
+        font-size: 0.625rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        padding: 10px 20px 5px 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+    }
 
     /* 右侧内容区 */
-    .content-area { flex: 1; padding: 20px; height: 100%; overflow-y: auto; background-color: #f4f6f9; position: relative; }
-    
+    .content-area {
+        flex: 1;
+        padding: 20px;
+        height: 100%;
+        overflow-y: auto;
+        background: var(--gradient-surface);
+        position: relative;
+    }
+
     /* 变量列表容器 */
-    .var-list-container { border: 1px solid #ced4da; height: 160px; overflow-y: auto; background: white; padding: 10px; border-radius: 4px; }
-    
+    .var-list-container {
+        border: 1px solid var(--border-color);
+        height: 160px;
+        overflow-y: auto;
+        background: var(--bg-tertiary);
+        padding: 10px;
+        border-radius: var(--radius-md);
+    }
+
     /* 表格样式 */
     .table-editable-container { text-align: center; margin-top: 20px; overflow-x: auto; }
-    .table-title-input { border: none; background: transparent; font-size: 1.2em; font-weight: bold; text-align: center; width: 80%; border-bottom: 1px dashed #ccc; }
-    .table-title-input:focus { outline: none; border-bottom: 1px solid #000; }
-    
+    .table-title-input {
+        border: none;
+        background: transparent;
+        font-size: 1.2em;
+        font-weight: bold;
+        text-align: center;
+        width: 80%;
+        border-bottom: 1px dashed var(--border-color);
+        color: var(--text-primary);
+    }
+    .table-title-input:focus { outline: none; border-bottom: 1px solid var(--accent-primary); }
+
     /* 学术表格基础样式 */
-    .academic-table { border-collapse: collapse; margin: 0 auto; font-family: "Times New Roman", serif; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.05); min-width: 50%; }
+    .academic-table { border-collapse: collapse; margin: 0 auto; font-family: "Times New Roman", serif; background: var(--bg-secondary); box-shadow: 0 4px 6px rgba(0,0,0,0.3); min-width: 50%; }
     .academic-table td, .academic-table th { padding: 6px 12px; white-space: nowrap; }
-    
+
     /* Loading 样式 */
     .spinner-border-sm { width: 1rem; height: 1rem; border-width: 0.15em; }
 
@@ -47,29 +109,68 @@
     <div id="sidebar">
         <!-- 基础分析区 -->
         <div class="sidebar-header">基础分析</div>
-        <a class="nav-link-sidebar" data-module="descriptive" onclick="switchModule('descriptive')">📊 描述性统计</a>
-        <a class="nav-link-sidebar" data-module="grouped-descriptive" onclick="switchModule('grouped-descriptive')">📊 分组描述性统计</a>
-        <a class="nav-link-sidebar" data-module="frequency" onclick="switchModule('frequency')">📋 频数统计</a>
-        <a class="nav-link-sidebar" data-module="correlation" onclick="switchModule('correlation')">🔗 相关性分析</a>
-        <a class="nav-link-sidebar" data-module="vif" onclick="switchModule('vif')">⚠️ VIF 共线性检验</a>
+        <a class="nav-link-sidebar" data-module="descriptive" onclick="switchModule('descriptive')">
+            <i class="fa-light fa-chart-simple"></i>
+            <span>描述性统计</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="grouped-descriptive" onclick="switchModule('grouped-descriptive')">
+            <i class="fa-light fa-chart-column"></i>
+            <span>分组描述性统计</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="frequency" onclick="switchModule('frequency')">
+            <i class="fa-light fa-table-list"></i>
+            <span>频数统计</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="correlation" onclick="switchModule('correlation')">
+            <i class="fa-light fa-link"></i>
+            <span>相关性分析</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="vif" onclick="switchModule('vif')">
+            <i class="fa-light fa-triangle-exclamation"></i>
+            <span>VIF 共线性检验</span>
+        </a>
 
-        <hr style="border-color: #4b5d6b; margin: 10px 0;">
+        <hr style="border-color: var(--border-color); margin: 10px 0;">
 
         <!-- 回归模型区 -->
         <div class="sidebar-header">回归模型</div>
-        <a class="nav-link-sidebar active" data-module="regression" data-method="ols" onclick="switchModule('regression', 'ols')">📈 线性 OLS 回归</a>
-        <a class="nav-link-sidebar" data-module="regression" data-method="fe" onclick="switchModule('regression', 'fe')">🏗️ 固定效应模型</a>
-        <a class="nav-link-sidebar" data-module="regression" data-method="re" onclick="switchModule('regression', 're')">🔀 随机效应模型</a>
-        <a class="nav-link-sidebar" data-module="regression" data-method="pooled" onclick="switchModule('regression', 'pooled')">📊 混合效应模型</a>
-        <a class="nav-link-sidebar" data-module="regression" data-method="logit" onclick="switchModule('regression', 'logit')">🟢 Logit 模型</a>
-        <a class="nav-link-sidebar" data-module="regression" data-method="probit" onclick="switchModule('regression', 'probit')">🔵 Probit 模型</a>
+        <a class="nav-link-sidebar active" data-module="regression" data-method="ols" onclick="switchModule('regression', 'ols')">
+            <i class="fa-light fa-chart-line"></i>
+            <span>线性 OLS 回归</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="regression" data-method="fe" onclick="switchModule('regression', 'fe')">
+            <i class="fa-light fa-building"></i>
+            <span>固定效应模型</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="regression" data-method="re" onclick="switchModule('regression', 're')">
+            <i class="fa-light fa-shuffle"></i>
+            <span>随机效应模型</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="regression" data-method="pooled" onclick="switchModule('regression', 'pooled')">
+            <i class="fa-light fa-layer-group"></i>
+            <span>混合效应模型</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="regression" data-method="logit" onclick="switchModule('regression', 'logit')">
+            <i class="fa-light fa-circle-check"></i>
+            <span>Logit 模型</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="regression" data-method="probit" onclick="switchModule('regression', 'probit')">
+            <i class="fa-light fa-circle-dot"></i>
+            <span>Probit 模型</span>
+        </a>
 
-        <hr style="border-color: #4b5d6b; margin: 10px 0;">
+        <hr style="border-color: var(--border-color); margin: 10px 0;">
 
         <!-- 模型检验区 -->
         <div class="sidebar-header">模型检验</div>
-        <a class="nav-link-sidebar" data-module="test" data-method="f_test" onclick="switchModule('test', 'f_test')">🔬 F检验 (FE vs Pooled)</a>
-        <a class="nav-link-sidebar" data-module="test" data-method="hausman" onclick="switchModule('test', 'hausman')">🧪 Hausman检验 (FE vs RE)</a>
+        <a class="nav-link-sidebar" data-module="test" data-method="f_test" onclick="switchModule('test', 'f_test')">
+            <i class="fa-light fa-flask"></i>
+            <span>F检验 (FE vs Pooled)</span>
+        </a>
+        <a class="nav-link-sidebar" data-module="test" data-method="hausman" onclick="switchModule('test', 'hausman')">
+            <i class="fa-light fa-vial"></i>
+            <span>Hausman检验 (FE vs RE)</span>
+        </a>
     </div>
 
     <!-- 右侧内容 -->

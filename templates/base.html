@@ -6,6 +6,20 @@
     <title>STATAU - {% block title %}首页{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons/bootstrap-icons.css') }}">
+
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 新主题CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme-dark.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/charts.css') }}">
+
     <style>
         body { padding-top: 56px; }
         .navbar-brand { font-weight: bold; color: #fff !important; }
@@ -28,7 +42,7 @@
         display: none; /* Chrome, Safari, Opera */
     }
     .auth-header {
-        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        background: var(--gradient-primary);
         color: white;
         padding: 20px 20px;
         text-align: center;
@@ -78,16 +92,16 @@
         opacity: 1 !important;
     }
     #authModal .nav-pills-custom .nav-item button.nav-link.active {
-        color: #6a11cb !important;
-        -webkit-text-fill-color: #6a11cb !important;
+        color: var(--accent-primary) !important;
+        -webkit-text-fill-color: var(--accent-primary) !important;
         background-color: transparent !important;
         background: transparent !important;
-        border-color: #6a11cb !important;
-        box-shadow: 0 4px 12px rgba(106, 17, 203, 0.2);
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.2);
     }
     #authModal .nav-pills-custom .nav-item button.nav-link:hover:not(.active) {
-        color: #6a11cb !important;
-        -webkit-text-fill-color: #6a11cb !important;
+        color: var(--accent-primary) !important;
+        -webkit-text-fill-color: var(--accent-primary) !important;
         border-color: #ddd !important;
     }
     /* 确保按钮内部文字不会被任何样式覆盖 */
@@ -126,11 +140,11 @@
         background: white;
     }
     .input-group-auth:focus-within {
-        border-color: #6a11cb;
-        box-shadow: 0 0 0 3px rgba(106, 17, 203, 0.1);
+        border-color: var(--accent-primary);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
     }
     .input-group-auth i {
-        color: #6a11cb;
+        color: var(--accent-primary);
         font-size: 1rem;
         margin-right: 10px;
     }
@@ -170,13 +184,13 @@
         transition: all 0.3s ease;
     }
     .captcha-img:hover {
-        border-color: #6a11cb;
+        border-color: var(--accent-primary);
         transform: translateY(-2px);
     }
     .captcha-refresh {
         background: none;
         border: none;
-        color: #6a11cb;
+        color: var(--accent-primary);
         font-size: 0.75rem;
         cursor: pointer;
         padding: 0;
@@ -200,12 +214,12 @@
         gap: 8px;
     }
     .btn-login {
-        background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+        background: var(--gradient-primary);
         color: white;
     }
     .btn-login:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(106, 17, 203, 0.3);
+        box-shadow: 0 8px 16px rgba(0, 212, 255, 0.3);
     }
     .btn-login:disabled {
         opacity: 0.7;
@@ -213,12 +227,12 @@
         transform: none;
     }
     .btn-register {
-        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
+        background: linear-gradient(135deg, var(--accent-success) 0%, #96c93d 100%);
         color: white;
     }
     .btn-register:hover:not(:disabled) {
         transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(0, 176, 155, 0.3);
+        box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
     }
     .btn-register:disabled {
         opacity: 0.7;
@@ -277,7 +291,7 @@
 <body>
 
 <!-- 导航栏 -->
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+<nav class="navbar navbar-expand-lg navbar-tech fixed-top">
     <div class="container-fluid">
         <a class="navbar-brand" href="/">STATAU</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -298,14 +312,14 @@
                 <li class="nav-item"><a class="nav-link {% if active_page == 'help' %}active{% endif %}" href="/help">帮助手册</a></li>
                 <!-- 管理后台入口（仅管理员可见） -->
                 {% if current_user.is_authenticated and current_user.role == 'admin' %}
-                <li class="nav-item"><a class="nav-link {% if active_page == 'admin' %}active{% endif %}" href="/admin" style="color: #ffd700 !important;"><i class="bi bi-shield-lock"></i> 管理后台</a></li>
+                <li class="nav-item"><a class="nav-link {% if active_page == 'admin' %}active{% endif %}" href="/admin" style="color: #ffd700 !important;"><i class="fa-light fa-shield-halved"></i> 管理后台</a></li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav ms-auto">
                 {% if current_user.is_authenticated %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                        <i class="fa-light fa-circle-user"></i> {{ current_user.username }}
                         {% if current_user.role == 'admin' %}
                         <span class="badge bg-warning text-dark ms-1">管理员</span>
                         {% endif %}
@@ -313,7 +327,7 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="#">个人中心</a></li>
                         {% if current_user.role == 'admin' %}
-                        <li><a class="dropdown-item" href="/admin"><i class="bi bi-shield-lock"></i> 管理后台</a></li>
+                        <li><a class="dropdown-item" href="/admin"><i class="fa-light fa-shield-halved"></i> 管理后台</a></li>
                         <li><hr class="dropdown-divider"></li>
                         {% endif %}
                         <li><a class="dropdown-item text-danger" href="/api/logout">退出登录</a></li>

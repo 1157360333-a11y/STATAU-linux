@@ -6,17 +6,17 @@
 <style>
     /* ========== 全局样式 ========== */
     .home-page {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--bg-primary);
         min-height: calc(100vh - 56px);
     }
-    
+
     /* ========== Hero 区域 ========== */
     .hero-section {
         position: relative;
         padding: 80px 0 100px;
         overflow: hidden;
     }
-    
+
     .hero-section::before {
         content: '';
         position: absolute;
@@ -24,34 +24,43 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        background-image:
+            linear-gradient(rgba(0, 212, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 212, 255, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
         opacity: 0.5;
     }
-    
+
     .hero-content {
         position: relative;
         z-index: 1;
     }
-    
+
     .hero-title {
-        font-size: 4rem;
+        font-size: clamp(4rem, 10vw, 8rem);
         font-weight: 800;
-        color: white;
-        text-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        letter-spacing: 3px;
+        font-family: var(--font-display);
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        letter-spacing: -0.02em;
+        line-height: 1;
         margin-bottom: 20px;
     }
-    
+
     .hero-subtitle {
-        font-size: 1.5rem;
-        color: rgba(255,255,255,0.95);
-        font-weight: 300;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        font-weight: 600;
         margin-bottom: 15px;
     }
-    
+
     .hero-description {
         font-size: 1.1rem;
-        color: rgba(255,255,255,0.85);
+        color: var(--text-secondary);
         max-width: 600px;
         margin: 0 auto 40px;
         line-height: 1.8;
@@ -59,72 +68,75 @@
     
     /* 按钮样式 */
     .btn-hero-primary {
-        background: white;
-        color: #667eea;
+        background: var(--gradient-primary);
+        color: white;
         padding: 16px 40px;
         font-size: 1.1rem;
         font-weight: 600;
         border-radius: 50px;
         border: none;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
         transition: all 0.3s ease;
     }
-    
+
     .btn-hero-primary:hover {
         transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-        color: #764ba2;
+        box-shadow: 0 15px 40px rgba(0, 212, 255, 0.5);
+        color: white;
     }
-    
+
     .btn-hero-secondary {
         background: transparent;
-        color: white;
+        color: var(--text-primary);
         padding: 15px 35px;
         font-size: 1rem;
         font-weight: 500;
         border-radius: 50px;
-        border: 2px solid rgba(255,255,255,0.5);
+        border: 2px solid var(--border-color);
         transition: all 0.3s ease;
     }
-    
+
     .btn-hero-secondary:hover {
-        background: rgba(255,255,255,0.1);
-        border-color: white;
-        color: white;
+        background: var(--bg-tertiary);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
     }
-    
+
     /* 统计数字展示 */
     .stats-row {
         margin-top: 60px;
         padding-top: 40px;
-        border-top: 1px solid rgba(255,255,255,0.2);
+        border-top: 1px solid var(--border-color);
     }
-    
+
     .stat-item {
         text-align: center;
-        color: white;
+        color: var(--text-primary);
     }
-    
+
     .stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
+        font-size: 3rem;
+        font-weight: 800;
         display: block;
+        color: var(--accent-primary);
+        text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        font-family: var(--font-mono);
     }
-    
+
     .stat-label {
-        font-size: 0.9rem;
-        opacity: 0.8;
+        font-size: 0.625rem;
+        color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 0.1em;
     }
     
     /* ========== 特性卡片区域 ========== */
     .features-section {
-        background: #f8f9fa;
+        background: var(--bg-secondary);
         padding: 80px 0;
         position: relative;
     }
-    
+
     .features-section::before {
         content: '';
         position: absolute;
@@ -132,35 +144,35 @@
         left: 0;
         right: 0;
         height: 100px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--bg-primary);
         clip-path: ellipse(70% 100% at 50% 0%);
     }
-    
+
     .section-title {
         font-size: 2.2rem;
         font-weight: 700;
-        color: #2c3e50;
+        color: var(--text-primary);
         margin-bottom: 15px;
     }
-    
+
     .section-subtitle {
-        color: #6c757d;
+        color: var(--text-secondary);
         font-size: 1.1rem;
         margin-bottom: 50px;
     }
-    
+
     .feature-card {
-        background: white;
+        background: var(--bg-tertiary);
         border-radius: 20px;
         padding: 40px 30px;
         height: 100%;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         transition: all 0.4s ease;
-        border: 1px solid rgba(0,0,0,0.05);
+        border: 1px solid var(--border-color);
         position: relative;
         overflow: hidden;
     }
-    
+
     .feature-card::before {
         content: '';
         position: absolute;
@@ -168,20 +180,21 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, #667eea, #764ba2);
+        background: var(--gradient-primary);
         transform: scaleX(0);
         transition: transform 0.4s ease;
     }
-    
+
     .feature-card:hover {
         transform: translateY(-10px);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+        box-shadow: 0 20px 60px rgba(0, 212, 255, 0.2);
+        border-color: var(--border-accent);
     }
-    
+
     .feature-card:hover::before {
         transform: scaleX(1);
     }
-    
+
     .feature-icon {
         width: 80px;
         height: 80px;
@@ -192,81 +205,97 @@
         font-size: 2.2rem;
         margin-bottom: 25px;
         transition: all 0.3s ease;
+        border: 2px solid var(--accent-primary);
+        background: transparent;
+        position: relative;
     }
-    
+
+    .feature-icon::after {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 20px;
+        background: var(--gradient-primary);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: -1;
+    }
+
     .feature-card:hover .feature-icon {
         transform: scale(1.1) rotate(5deg);
     }
-    
-    .icon-algorithm { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .icon-academic { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); }
-    .icon-cloud { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-    .icon-easy { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-    .icon-secure { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-    .icon-support { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
-    
+
+    .feature-card:hover .feature-icon::after {
+        opacity: 0.2;
+    }
+
+    .feature-icon i {
+        color: var(--accent-primary);
+        z-index: 1;
+    }
+
     .feature-title {
         font-size: 1.3rem;
         font-weight: 700;
-        color: #2c3e50;
+        color: var(--text-primary);
         margin-bottom: 15px;
     }
-    
+
     .feature-desc {
-        color: #6c757d;
+        color: var(--text-secondary);
         line-height: 1.7;
         font-size: 0.95rem;
     }
     
     /* ========== 支持的模型区域 ========== */
     .models-section {
-        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+        background: var(--gradient-surface);
         padding: 80px 0;
     }
-    
+
     .model-badge {
         display: inline-flex;
         align-items: center;
-        background: white;
+        background: var(--bg-tertiary);
         padding: 12px 24px;
         border-radius: 50px;
         margin: 8px;
         font-weight: 500;
-        color: #495057;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        color: var(--text-secondary);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         transition: all 0.3s ease;
-        border: 1px solid #e9ecef;
+        border: 1px solid var(--border-color);
     }
-    
+
     .model-badge:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
-        border-color: #667eea;
-        color: #667eea;
+        box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+        border-color: var(--accent-primary);
+        color: var(--accent-primary);
     }
-    
+
     .model-badge i {
         margin-right: 8px;
         font-size: 1.1rem;
     }
-    
+
     /* ========== 工作流程区域 ========== */
     .workflow-section {
-        background: #2c3e50;
+        background: var(--bg-secondary);
         padding: 80px 0;
-        color: white;
+        color: var(--text-primary);
     }
-    
+
     .workflow-step {
         text-align: center;
         padding: 30px 20px;
         position: relative;
     }
-    
+
     .step-number {
         width: 60px;
         height: 60px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--gradient-primary);
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -274,44 +303,46 @@
         font-size: 1.5rem;
         font-weight: 700;
         margin: 0 auto 20px;
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
+        color: white;
     }
-    
+
     .step-title {
         font-size: 1.2rem;
         font-weight: 600;
         margin-bottom: 10px;
+        color: var(--text-primary);
     }
-    
+
     .step-desc {
-        color: rgba(255,255,255,0.7);
+        color: var(--text-secondary);
         font-size: 0.9rem;
     }
-    
+
     .workflow-arrow {
         position: absolute;
         right: -20px;
         top: 50%;
         transform: translateY(-50%);
         font-size: 2rem;
-        color: rgba(255,255,255,0.3);
+        color: var(--border-color);
     }
-    
+
     /* ========== 关于区域 ========== */
     .about-section {
-        background: white;
+        background: var(--bg-primary);
         padding: 80px 0;
     }
-    
+
     .about-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--gradient-primary);
         border-radius: 30px;
         padding: 60px;
         color: white;
         position: relative;
         overflow: hidden;
     }
-    
+
     .about-card::before {
         content: '';
         position: absolute;
@@ -321,72 +352,73 @@
         height: 100%;
         background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
     }
-    
+
     .about-title {
         font-size: 2rem;
         font-weight: 700;
         margin-bottom: 20px;
     }
-    
+
     .about-text {
         font-size: 1.1rem;
         line-height: 1.9;
         opacity: 0.95;
     }
-    
+
     /* ========== CTA 区域 ========== */
     .cta-section {
-        background: #f8f9fa;
+        background: var(--bg-secondary);
         padding: 60px 0;
         text-align: center;
     }
-    
+
     .cta-title {
         font-size: 2rem;
         font-weight: 700;
-        color: #2c3e50;
+        color: var(--text-primary);
         margin-bottom: 20px;
     }
-    
+
     .cta-subtitle {
-        color: #6c757d;
+        color: var(--text-secondary);
         margin-bottom: 30px;
     }
-    
+
     .btn-cta {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: var(--gradient-primary);
         color: white;
         padding: 16px 50px;
         font-size: 1.1rem;
         font-weight: 600;
         border-radius: 50px;
         border: none;
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        box-shadow: 0 10px 30px rgba(0, 212, 255, 0.4);
         transition: all 0.3s ease;
     }
-    
+
     .btn-cta:hover {
         transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+        box-shadow: 0 15px 40px rgba(0, 212, 255, 0.5);
         color: white;
     }
-    
+
     /* ========== Footer ========== */
     .footer-section {
-        background: #1a252f;
+        background: var(--bg-primary);
         padding: 40px 0;
-        color: rgba(255,255,255,0.6);
+        color: var(--text-muted);
         font-size: 0.9rem;
+        border-top: 1px solid var(--border-color);
     }
-    
+
     .footer-section a {
-        color: rgba(255,255,255,0.8);
+        color: var(--text-secondary);
         text-decoration: none;
         transition: color 0.3s;
     }
-    
+
     .footer-section a:hover {
-        color: #667eea;
+        color: var(--accent-primary);
     }
     
     /* ========== 响应式调整 ========== */
@@ -459,14 +491,14 @@
                 <div class="d-flex justify-content-center gap-3 flex-wrap">
                     {% if current_user.is_authenticated %}
                         <a href="/analysis" class="btn btn-hero-primary">
-                            <i class="bi bi-graph-up me-2"></i>进入数据分析工作台
+                            <i class="fa-light fa-chart-line me-2"></i>进入数据分析工作台
                         </a>
                     {% else %}
                         <button class="btn btn-hero-primary" data-bs-toggle="modal" data-bs-target="#authModal">
-                            <i class="bi bi-rocket-takeoff me-2"></i>立即开始使用
+                            <i class="fa-light fa-rocket me-2"></i>立即开始使用
                         </button>
                         <a href="/help" class="btn btn-hero-secondary">
-                            <i class="bi bi-book me-2"></i>查看帮助文档
+                            <i class="fa-light fa-book me-2"></i>查看帮助文档
                         </a>
                     {% endif %}
                 </div>
@@ -507,8 +539,8 @@
             <div class="row g-4">
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
-                        <div class="feature-icon icon-algorithm">
-                            <i class="bi bi-cpu text-white"></i>
+                        <div class="feature-icon">
+                            <i class="fa-light fa-microchip"></i>
                         </div>
                         <h3 class="feature-title">算法精确可靠</h3>
                         <p class="feature-desc">
@@ -517,11 +549,11 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
-                        <div class="feature-icon icon-academic">
-                            <i class="bi bi-journal-richtext text-white"></i>
+                        <div class="feature-icon">
+                            <i class="fa-light fa-graduation-cap"></i>
                         </div>
                         <h3 class="feature-title">学术标准输出</h3>
                         <p class="feature-desc">
@@ -530,11 +562,11 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
-                        <div class="feature-icon icon-cloud">
-                            <i class="bi bi-cloud-check text-white"></i>
+                        <div class="feature-icon">
+                            <i class="fa-light fa-cloud"></i>
                         </div>
                         <h3 class="feature-title">云端即时计算</h3>
                         <p class="feature-desc">
@@ -543,11 +575,11 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
-                        <div class="feature-icon icon-easy">
-                            <i class="bi bi-hand-index-thumb text-white"></i>
+                        <div class="feature-icon">
+                            <i class="fa-light fa-wand-magic-sparkles"></i>
                         </div>
                         <h3 class="feature-title">零代码操作</h3>
                         <p class="feature-desc">
@@ -556,11 +588,11 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
-                        <div class="feature-icon icon-secure">
-                            <i class="bi bi-shield-check text-white"></i>
+                        <div class="feature-icon">
+                            <i class="fa-light fa-shield-check"></i>
                         </div>
                         <h3 class="feature-title">数据安全保障</h3>
                         <p class="feature-desc">
@@ -569,11 +601,11 @@
                         </p>
                     </div>
                 </div>
-                
+
                 <div class="col-lg-4 col-md-6">
                     <div class="feature-card">
-                        <div class="feature-icon icon-support">
-                            <i class="bi bi-headset text-dark"></i>
+                        <div class="feature-icon">
+                            <i class="fa-light fa-arrows-rotate"></i>
                         </div>
                         <h3 class="feature-title">持续更新支持</h3>
                         <p class="feature-desc">
@@ -595,16 +627,16 @@
             </div>
             
             <div class="text-center">
-                <span class="model-badge"><i class="bi bi-graph-up-arrow"></i>OLS 线性回归</span>
-                <span class="model-badge"><i class="bi bi-layers"></i>固定效应模型</span>
-                <span class="model-badge"><i class="bi bi-toggle-on"></i>Logit 模型</span>
-                <span class="model-badge"><i class="bi bi-toggle2-on"></i>Probit 模型</span>
-                <span class="model-badge"><i class="bi bi-bar-chart-steps"></i>描述性统计</span>
-                <span class="model-badge"><i class="bi bi-link-45deg"></i>相关性分析</span>
-                <span class="model-badge"><i class="bi bi-exclamation-triangle"></i>VIF 共线性检验</span>
-                <span class="model-badge"><i class="bi bi-diagram-3"></i>中介效应模型</span>
-                <span class="model-badge"><i class="bi bi-people"></i>异质性分析</span>
-                <span class="model-badge pulse"><i class="bi bi-plus-circle"></i>更多模型开发中...</span>
+                <span class="model-badge"><i class="fa-light fa-chart-line"></i>OLS 线性回归</span>
+                <span class="model-badge"><i class="fa-light fa-layer-group"></i>固定效应模型</span>
+                <span class="model-badge"><i class="fa-light fa-circle-check"></i>Logit 模型</span>
+                <span class="model-badge"><i class="fa-light fa-circle-dot"></i>Probit 模型</span>
+                <span class="model-badge"><i class="fa-light fa-chart-simple"></i>描述性统计</span>
+                <span class="model-badge"><i class="fa-light fa-link"></i>相关性分析</span>
+                <span class="model-badge"><i class="fa-light fa-triangle-exclamation"></i>VIF 共线性检验</span>
+                <span class="model-badge"><i class="fa-light fa-diagram-project"></i>中介效应模型</span>
+                <span class="model-badge"><i class="fa-light fa-users"></i>异质性分析</span>
+                <span class="model-badge pulse"><i class="fa-light fa-plus-circle"></i>更多模型开发中...</span>
             </div>
         </div>
     </section>
@@ -623,7 +655,7 @@
                         <div class="step-number">1</div>
                         <h4 class="step-title">上传数据</h4>
                         <p class="step-desc">支持 CSV、Excel、Stata DTA 格式</p>
-                        <span class="workflow-arrow d-none d-md-block"><i class="bi bi-arrow-right"></i></span>
+                        <span class="workflow-arrow d-none d-md-block"><i class="fa-light fa-arrow-right"></i></span>
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -659,7 +691,7 @@
             <div class="about-card">
                 <div class="row align-items-center">
                     <div class="col-lg-8">
-                        <h2 class="about-title"><i class="bi bi-info-circle me-2"></i>关于 STATAU</h2>
+                        <h2 class="about-title"><i class="fa-light fa-circle-info me-2"></i>关于 STATAU</h2>
                         <p class="about-text">
                             STATAU 致力于降低实证研究的门槛。我们深知，对于许多经济学研究者而言，
                             掌握 Stata 等统计软件的使用需要投入大量时间和精力。STATAU 的目标是让研究者
@@ -672,7 +704,7 @@
                     </div>
                     <div class="col-lg-4 text-center mt-4 mt-lg-0">
                         <div class="floating">
-                            <i class="bi bi-bar-chart-line" style="font-size: 8rem; opacity: 0.3;"></i>
+                            <i class="fa-light fa-chart-column" style="font-size: 8rem; opacity: 0.3;"></i>
                         </div>
                     </div>
                 </div>
@@ -687,11 +719,11 @@
             <p class="cta-subtitle">免费注册，立即体验云端计量分析的便捷</p>
             {% if current_user.is_authenticated %}
                 <a href="/analysis" class="btn btn-cta">
-                    <i class="bi bi-arrow-right-circle me-2"></i>进入工作台
+                    <i class="fa-light fa-arrow-right-circle me-2"></i>进入工作台
                 </a>
             {% else %}
                 <button class="btn btn-cta" data-bs-toggle="modal" data-bs-target="#authModal">
-                    <i class="bi bi-person-plus me-2"></i>免费注册
+                    <i class="fa-light fa-user-plus me-2"></i>免费注册
                 </button>
             {% endif %}
         </div>
