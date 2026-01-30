@@ -92,23 +92,27 @@ class ProductionConfig(BaseConfig):
     """
     DEBUG = False
     TESTING = False
-    
+
     # ------------------------------------------------------------------------
     # 服务器 URL 配置（重要：防止生成 localhost URL）
     # ------------------------------------------------------------------------
     # 方式1：如果使用域名，设置 SERVER_NAME（推荐）
     # SERVER_NAME = 'your-domain.com'  # 替换为你的实际域名
-    
+
     # 方式2：如果使用 IP 或反向代理，设置 PREFERRED_URL_SCHEME
     PREFERRED_URL_SCHEME = 'http'  # 如果使用 HTTPS，改为 'https'
-    
+
     # 方式3：强制使用相对 URL（最通用的方案）
     APPLICATION_ROOT = '/'
-    
-    
+
+
+class ServerConfig(ProductionConfig):
+    """
+    服务器版配置
+    继承生产环境配置，额外添加文件系统 Session 支持
+    """
     # ------------------------------------------------------------------------
-    # 生产环境 Session 配置 (服务器版，使用文件系统存储)
-    # 注意：在服务器上运行时取消下面的注释
+    # 服务器版 Session 配置（使用文件系统存储）
     # ------------------------------------------------------------------------
     SESSION_TYPE = 'filesystem'
     SESSION_FILE_DIR = './flask_session'
@@ -140,6 +144,7 @@ class TestingConfig(BaseConfig):
 config_map = {
     'development': DevelopmentConfig,
     'production': ProductionConfig,
+    'server': ServerConfig,
     'testing': TestingConfig,
     'default': DevelopmentConfig
 }
@@ -148,15 +153,38 @@ config_map = {
 def get_config(config_name=None):
     """
     获取配置类的工厂函数
-    
+
     参数:
-        config_name: 配置名称 ('development', 'production', 'testing')
-                     如果为 None，则从环境变量 FLASK_ENV 读取
-    
+        config_name: 配置名称 ('development', 'production', 'server', 'testing')
+                     如果为 None，则根据环境变量自动选择：
+                     - 优先读取 RUN_MODE（'local' 或 'server'）
+                     - 其次读取 FLASK_ENV
+                     - 默认使用 development
+
     返回:
         对应的配置类
+
+    使用示例:
+        # 方式1：通过 RUN_MODE 环境变量（推荐）
+        export RUN_MODE=local    # 本地版
+        export RUN_MODE=server   # 服务器版
+
+        # 方式2：通过 FLASK_ENV 环境变量
+        export FLASK_ENV=development
+        export FLASK_ENV=production
     """
     if config_name is None:
-        config_name = os.environ.get('FLASK_ENV', 'development')
-    
+        # 优先检查 RUN_MODE 环境变量
+        run_mode = os.environ.get('RUN_MODE', '').lower()
+
+        if run_mode == 'local':
+            # 本地版：使用开发环境配置
+            config_name = 'development'
+        elif run_mode == 'server':
+            # 服务器版：使用服务器配置（包含文件系统 Session）
+            config_name = 'server'
+        else:
+            # 如果没有设置 RUN_MODE，则读取 FLASK_ENV
+            config_name = os.environ.get('FLASK_ENV', 'development')
+
     return config_map.get(config_name, DevelopmentConfig)
