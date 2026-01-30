@@ -100,6 +100,152 @@
     /* 预览模态框样式 */
     #previewModal .modal-body { max-height: 70vh; overflow-y: auto; }
     #previewModal .table td, #previewModal .table th { white-space: nowrap; }
+
+    /* ========== 暗色主题覆盖 ========== */
+    /* 卡片 */
+    .card {
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border-color) !important;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .card-header {
+        background: var(--bg-tertiary) !important;
+        border-bottom: 1px solid var(--border-accent) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .card-body {
+        background: var(--bg-secondary) !important;
+    }
+
+    /* 表单控件 */
+    .form-control, .form-select {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .form-control:focus, .form-select:focus {
+        background: var(--bg-tertiary) !important;
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .form-control::placeholder {
+        color: var(--text-muted) !important;
+    }
+
+    .form-check-input {
+        background-color: var(--bg-tertiary) !important;
+        border-color: var(--border-color) !important;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--accent-primary) !important;
+        border-color: var(--accent-primary) !important;
+    }
+
+    .form-check-label {
+        color: var(--text-secondary) !important;
+    }
+
+    /* 标签 */
+    label, .small {
+        color: var(--text-secondary) !important;
+    }
+
+    /* 按钮 */
+    .btn-light {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-secondary) !important;
+    }
+
+    .btn-light:hover {
+        background: var(--bg-elevated) !important;
+        border-color: var(--accent-primary) !important;
+        color: var(--accent-primary) !important;
+    }
+
+    /* 模态框 */
+    .modal-content {
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+
+    .modal-header {
+        background: var(--bg-tertiary) !important;
+        border-bottom: 1px solid var(--border-accent) !important;
+    }
+
+    .modal-body {
+        background: var(--bg-secondary) !important;
+    }
+
+    .modal-footer {
+        background: var(--bg-tertiary) !important;
+        border-top: 1px solid var(--border-accent) !important;
+    }
+
+    .modal-title {
+        color: var(--text-primary) !important;
+    }
+
+    .btn-close {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    /* 表格 */
+    .table {
+        color: var(--text-secondary) !important;
+    }
+
+    .table thead th {
+        background: var(--bg-tertiary) !important;
+        color: var(--text-primary) !important;
+        border-color: var(--border-color) !important;
+    }
+
+    .table tbody td {
+        border-color: var(--border-color) !important;
+    }
+
+    .table-hover tbody tr:hover {
+        background: var(--bg-tertiary) !important;
+    }
+
+    /* Alert */
+    .alert {
+        background: var(--bg-tertiary) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+    }
+
+    .alert-warning {
+        border-color: var(--accent-warning) !important;
+        background: rgba(245, 158, 11, 0.1) !important;
+    }
+
+    /* 背景色 */
+    .bg-light {
+        background: var(--bg-tertiary) !important;
+    }
+
+    .bg-white {
+        background: var(--bg-secondary) !important;
+    }
+
+    /* 文本颜色 */
+    .text-primary {
+        color: var(--accent-primary) !important;
+    }
+
+    /* 隐藏侧边栏滚动条样式 */
+    #sidebar::-webkit-scrollbar {
+        width: 0px;
+    }
 </style>
 {% endblock %}
 
