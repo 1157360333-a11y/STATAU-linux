@@ -312,14 +312,14 @@
                 <li class="nav-item"><a class="nav-link {% if active_page == 'help' %}active{% endif %}" href="/help">帮助手册</a></li>
                 <!-- 管理后台入口（仅管理员可见） -->
                 {% if current_user.is_authenticated and current_user.role == 'admin' %}
-                <li class="nav-item"><a class="nav-link {% if active_page == 'admin' %}active{% endif %}" href="/admin" style="color: #ffd700 !important;"><i class="fa-regular fa-shield-halved"></i> 管理后台</a></li>
+                <li class="nav-item"><a class="nav-link {% if active_page == 'admin' %}active{% endif %}" href="/admin" style="color: #ffd700 !important;"><i class="fa-solid fa-shield-halved"></i> 管理后台</a></li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav ms-auto">
                 {% if current_user.is_authenticated %}
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                        <i class="fa-regular fa-circle-user"></i> {{ current_user.username }}
+                        <i class="fa-solid fa-circle-user"></i> {{ current_user.username }}
                         {% if current_user.role == 'admin' %}
                         <span class="badge bg-warning text-dark ms-1">管理员</span>
                         {% endif %}
@@ -327,7 +327,7 @@
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="#">个人中心</a></li>
                         {% if current_user.role == 'admin' %}
-                        <li><a class="dropdown-item" href="/admin"><i class="fa-regular fa-shield-halved"></i> 管理后台</a></li>
+                        <li><a class="dropdown-item" href="/admin"><i class="fa-solid fa-shield-halved"></i> 管理后台</a></li>
                         <li><hr class="dropdown-divider"></li>
                         {% endif %}
                         <li><a class="dropdown-item text-danger" href="/api/logout">退出登录</a></li>

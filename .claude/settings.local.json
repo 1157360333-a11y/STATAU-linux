@@ -7,7 +7,8 @@
       "Bash(ssh-add:*)",
       "Bash(git add:*)",
       "Bash(curl:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(python:*)"
     ]
   }
 }
