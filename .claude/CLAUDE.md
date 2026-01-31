@@ -63,8 +63,8 @@ Flask Web应用 - 统计分析工具
 - `README.md` - 项目说明
 - `ARCHITECTURE.md` - 架构文档
 - `部署.md` - 部署指南
-- `管理后台使用说明.md` - 管理后台文档
-- `邮箱验证功能说明.md` - 邮箱功能文档
+- `环境切换说明.md` - 环境切换说明
+- `CLAUDE.md` - Claude助手工作流程
 
 ## Claude助手工作流程
 
@@ -98,25 +98,3 @@ Flask Web应用 - 统计分析工具
 ### 本地路径
 - 项目路径: `c:\Users\86132\Desktop\STATAU-linux`
 - 虚拟环境: `venv/`
-
-## 快速命令参考
-
-```bash
-# 查看远程仓库
-git remote -v
-
-# 查看当前分支
-git branch
-
-# 切换分支
-git checkout master
-
-# 查看提交历史
-git log --oneline --graph --all
-
-# 撤销未提交的修改
-git checkout -- <file>
-
-# 查看差异
-git diff
-```

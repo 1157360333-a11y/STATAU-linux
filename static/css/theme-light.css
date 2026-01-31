@@ -1,0 +1,71 @@
+/* ============================================
+   STATAU Light Theme
+   Version: 2.0
+   ============================================ */
+
+/* -------------------- Light Theme Variables -------------------- */
+[data-theme="light"] {
+    /* Colors - Background */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-elevated: #ffffff;
+
+    /* Colors - Text */
+    --text-primary: #1a202c;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --text-inverse: #ffffff;
+
+    /* Colors - Border */
+    --border-color: #e2e8f0;
+    --border-accent: rgba(0, 212, 255, 0.3);
+
+    /* Shadows - Lighter for light theme */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+    --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.2);
+
+    /* Gradients */
+    --gradient-surface: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+    --gradient-glow: radial-gradient(circle at center, rgba(0, 212, 255, 0.08) 0%, transparent 70%);
+}
+
+/* -------------------- Light Theme Specific Styles -------------------- */
+
+/* Background Patterns */
+[data-theme="light"] .bg-grid {
+    background-image:
+        linear-gradient(rgba(0, 212, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.08) 1px, transparent 1px);
+}
+
+[data-theme="light"] .bg-dots {
+    background-image: radial-gradient(circle, rgba(0, 212, 255, 0.15) 1px, transparent 1px);
+}
+
+/* Modal */
+[data-theme="light"] .modal-tech {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Glow Effects - Adjusted for light theme */
+[data-theme="light"] .glow-primary {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+}
+
+[data-theme="light"] .glow-hover:hover {
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+}
+
+/* Animations - Adjusted for light theme */
+@keyframes pulse-glow-light {
+    0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.2); }
+    50% { box-shadow: 0 0 40px rgba(0, 212, 255, 0.4); }
+}
+
+[data-theme="light"] .animate-pulse-glow {
+    animation: pulse-glow-light 2s ease-in-out infinite;
+}

@@ -4,6 +4,7 @@
    ============================================ */
 
 /* -------------------- Design Tokens -------------------- */
+/* Default theme (dark) */
 :root {
     /* Colors - Background */
     --bg-primary: #0a0e27;
@@ -81,6 +82,36 @@
     --radius-xl: 1rem;
     --radius-2xl: 1.5rem;
     --radius-full: 9999px;
+}
+
+/* Dark theme explicit */
+[data-theme="dark"] {
+    /* Colors - Background */
+    --bg-primary: #0a0e27;
+    --bg-secondary: #141b2d;
+    --bg-tertiary: #1e2740;
+    --bg-elevated: #252d44;
+
+    /* Colors - Text */
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-inverse: #0f172a;
+
+    /* Colors - Border */
+    --border-color: #2d3748;
+    --border-accent: rgba(0, 212, 255, 0.2);
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.3);
+    --shadow-glow: 0 0 20px rgba(0, 212, 255, 0.3);
+
+    /* Gradients */
+    --gradient-surface: linear-gradient(180deg, #141b2d 0%, #0a0e27 100%);
+    --gradient-glow: radial-gradient(circle at center, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
 }
 
 /* -------------------- Global Resets -------------------- */
