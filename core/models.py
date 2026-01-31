@@ -1617,3 +1617,320 @@ class ModelTests:
                 'fe_coeffs': {k: round(v, decimals) for k, v in beta_fe.items()},
                 're_coeffs': {k: round(v, decimals) for k, v in beta_re.items()}
             }
+
+    @staticmethod
+    def breusch_pagan_test(
+        df: pd.DataFrame,
+        y_var: str,
+        x_vars: List[str],
+        decimals: int = 4
+    ) -> Dict[str, Any]:
+        """
+        Breusch-Pagan检验：检验异方差性
+
+        原假设：同方差（残差方差为常数）
+        备择假设：异方差（残差方差与自变量相关）
+
+        参数:
+            df: 数据框
+            y_var: 因变量名
+            x_vars: 自变量列表
+            decimals: 小数位数
+
+        返回:
+            包含检验结果的字典
+        """
+        # 准备数据
+        cols = [y_var] + x_vars
+        df_clean = df[cols].dropna()
+
+        # 1. 估计原始OLS模型
+        formula = f"{y_var} ~ {' + '.join(x_vars)}"
+        model = smf.ols(formula, data=df_clean)
+        result = model.fit()
+
+        # 2. 获取残差
+        residuals = result.resid
+
+        # 3. 计算残差平方
+        resid_squared = residuals ** 2
+
+        # 4. 用残差平方对自变量进行回归
+        # 构建辅助回归的数据框
+        aux_df = df_clean[x_vars].copy()
+        aux_df['resid_squared'] = resid_squared.values
+
+        # 辅助回归
+        aux_formula = f"resid_squared ~ {' + '.join(x_vars)}"
+        aux_model = smf.ols(aux_formula, data=aux_df)
+        aux_result = aux_model.fit()
+
+        # 5. 计算BP统计量
+        # BP = n * R^2 (辅助回归的R^2)
+        n = len(df_clean)
+        r_squared = aux_result.rsquared
+        bp_stat = n * r_squared
+
+        # 6. 计算p值（卡方分布，自由度为自变量个数）
+        df_test = len(x_vars)
+        p_value = 1 - chi2.cdf(bp_stat, df_test)
+
+        # 7. 判断结果
+        if p_value < 0.01:
+            conclusion = "强烈拒绝原假设，存在显著异方差"
+            stars = "***"
+        elif p_value < 0.05:
+            conclusion = "拒绝原假设，存在异方差"
+            stars = "**"
+        elif p_value < 0.1:
+            conclusion = "弱拒绝原假设，可能存在异方差"
+            stars = "*"
+        else:
+            conclusion = "不能拒绝原假设，不存在显著异方差（同方差）"
+            stars = ""
+
+        return {
+            'test_name': 'Breusch-Pagan 检验（异方差性检验）',
+            'null_hypothesis': '同方差（残差方差为常数）',
+            'alternative_hypothesis': '异方差（残差方差与自变量相关）',
+            'bp_statistic': round(bp_stat, decimals),
+            'df': df_test,
+            'p_value': round(p_value, decimals),
+            'significance': stars,
+            'conclusion': conclusion,
+            'aux_r_squared': round(r_squared, decimals),
+            'n_obs': n,
+            'note': '如果拒绝原假设，建议使用稳健标准误（robust standard errors）'
+        }
+
+    @staticmethod
+    def white_test(
+        df: pd.DataFrame,
+        y_var: str,
+        x_vars: List[str],
+        decimals: int = 4
+    ) -> Dict[str, Any]:
+        """
+        White检验：检验异方差性（更一般的形式）
+
+        原假设：同方差（残差方差为常数）
+        备择假设：异方差（残差方差与自变量及其交叉项相关）
+
+        参数:
+            df: 数据框
+            y_var: 因变量名
+            x_vars: 自变量列表
+            decimals: 小数位数
+
+        返回:
+            包含检验结果的字典
+        """
+        # 准备数据
+        cols = [y_var] + x_vars
+        df_clean = df[cols].dropna()
+
+        # 1. 估计原始OLS模型
+        formula = f"{y_var} ~ {' + '.join(x_vars)}"
+        model = smf.ols(formula, data=df_clean)
+        result = model.fit()
+
+        # 2. 获取残差
+        residuals = result.resid
+
+        # 3. 计算残差平方
+        resid_squared = residuals ** 2
+
+        # 4. 构建White检验的辅助回归
+        # 包括：所有自变量、自变量的平方、自变量的交叉项
+        aux_df = df_clean[x_vars].copy()
+
+        # 添加平方项
+        for var in x_vars:
+            aux_df[f'{var}_sq'] = aux_df[var] ** 2
+
+        # 添加交叉项（只对前几个变量，避免维度爆炸）
+        # 如果变量太多，只使用平方项
+        if len(x_vars) <= 5:
+            for i, var1 in enumerate(x_vars):
+                for var2 in x_vars[i+1:]:
+                    aux_df[f'{var1}_x_{var2}'] = aux_df[var1] * aux_df[var2]
+
+        aux_df['resid_squared'] = resid_squared.values
+
+        # 构建辅助回归公式
+        aux_vars = [col for col in aux_df.columns if col != 'resid_squared']
+        aux_formula = f"resid_squared ~ {' + '.join(aux_vars)}"
+
+        try:
+            # 辅助回归
+            aux_model = smf.ols(aux_formula, data=aux_df)
+            aux_result = aux_model.fit()
+
+            # 5. 计算White统计量
+            # White = n * R^2 (辅助回归的R^2)
+            n = len(df_clean)
+            r_squared = aux_result.rsquared
+            white_stat = n * r_squared
+
+            # 6. 计算p值（卡方分布，自由度为辅助回归中的自变量个数）
+            df_test = len(aux_vars)
+            p_value = 1 - chi2.cdf(white_stat, df_test)
+
+            # 7. 判断结果
+            if p_value < 0.01:
+                conclusion = "强烈拒绝原假设，存在显著异方差"
+                stars = "***"
+            elif p_value < 0.05:
+                conclusion = "拒绝原假设，存在异方差"
+                stars = "**"
+            elif p_value < 0.1:
+                conclusion = "弱拒绝原假设，可能存在异方差"
+                stars = "*"
+            else:
+                conclusion = "不能拒绝原假设，不存在显著异方差（同方差）"
+                stars = ""
+
+            return {
+                'test_name': 'White 检验（异方差性检验）',
+                'null_hypothesis': '同方差（残差方差为常数）',
+                'alternative_hypothesis': '异方差（残差方差与自变量、平方项及交叉项相关）',
+                'white_statistic': round(white_stat, decimals),
+                'df': df_test,
+                'p_value': round(p_value, decimals),
+                'significance': stars,
+                'conclusion': conclusion,
+                'aux_r_squared': round(r_squared, decimals),
+                'n_obs': n,
+                'n_aux_vars': len(aux_vars),
+                'note': 'White检验比BP检验更一般，不假设异方差的具体形式。如果拒绝原假设，建议使用稳健标准误'
+            }
+
+        except Exception as e:
+            return {
+                'test_name': 'White 检验（异方差性检验）',
+                'error': f'计算White统计量时出错: {str(e)}',
+                'suggestion': '可能是因为变量过多导致辅助回归出现共线性问题。建议：1) 减少自变量数量；2) 使用Breusch-Pagan检验作为替代',
+                'n_obs': len(df_clean),
+                'n_vars': len(x_vars)
+            }
+
+    @staticmethod
+    def durbin_watson_test(
+        df: pd.DataFrame,
+        y_var: str,
+        x_vars: List[str],
+        time_col: Optional[str] = None,
+        entity_col: Optional[str] = None,
+        decimals: int = 4
+    ) -> Dict[str, Any]:
+        """
+        Durbin-Watson检验：检验一阶序列相关性
+
+        原假设：不存在一阶自相关（ρ = 0）
+        备择假设：存在一阶自相关（ρ ≠ 0）
+
+        DW统计量的取值范围：0 到 4
+        - DW ≈ 2：不存在自相关
+        - DW < 2：正自相关
+        - DW > 2：负自相关
+
+        参数:
+            df: 数据框
+            y_var: 因变量名
+            x_vars: 自变量列表
+            time_col: 时间列（用于排序，如果提供）
+            entity_col: 个体列（面板数据，如果提供）
+            decimals: 小数位数
+
+        返回:
+            包含检验结果的字典
+        """
+        # 准备数据
+        cols = [y_var] + x_vars
+        if time_col and time_col not in cols:
+            cols.append(time_col)
+        if entity_col and entity_col not in cols:
+            cols.append(entity_col)
+
+        df_clean = df[cols].dropna()
+
+        # 如果是面板数据，按个体和时间排序
+        if entity_col and time_col:
+            df_clean = df_clean.sort_values([entity_col, time_col])
+        elif time_col:
+            df_clean = df_clean.sort_values(time_col)
+
+        # 1. 估计OLS模型
+        formula = f"{y_var} ~ {' + '.join(x_vars)}"
+        model = smf.ols(formula, data=df_clean)
+        result = model.fit()
+
+        # 2. 获取残差
+        residuals = result.resid.values
+
+        # 3. 计算DW统计量
+        # DW = Σ(e_t - e_{t-1})^2 / Σ(e_t)^2
+
+        if entity_col:
+            # 面板数据：分组计算DW统计量
+            dw_stats = []
+            entities = df_clean[entity_col].unique()
+
+            for entity in entities:
+                entity_mask = df_clean[entity_col] == entity
+                entity_resid = residuals[entity_mask]
+
+                if len(entity_resid) > 1:
+                    diff_squared = np.sum((entity_resid[1:] - entity_resid[:-1]) ** 2)
+                    resid_squared = np.sum(entity_resid ** 2)
+                    if resid_squared > 0:
+                        dw_entity = diff_squared / resid_squared
+                        dw_stats.append(dw_entity)
+
+            # 使用平均DW统计量
+            dw_stat = np.mean(dw_stats) if dw_stats else np.nan
+            note_panel = f'面板数据：计算了{len(dw_stats)}个个体的DW统计量，报告平均值'
+        else:
+            # 时间序列或截面数据
+            diff_squared = np.sum((residuals[1:] - residuals[:-1]) ** 2)
+            resid_squared = np.sum(residuals ** 2)
+            dw_stat = diff_squared / resid_squared if resid_squared > 0 else np.nan
+            note_panel = ''
+
+        # 4. 判断结果
+        # DW统计量的临界值依赖于样本量和自变量个数
+        # 这里使用经验法则：
+        # - DW < 1.5：可能存在正自相关
+        # - 1.5 <= DW <= 2.5：不存在显著自相关
+        # - DW > 2.5：可能存在负自相关
+
+        if dw_stat < 1.5:
+            conclusion = "DW统计量较小，可能存在正自相关"
+            interpretation = "残差存在正自相关，当期残差与上期残差正相关"
+            suggestion = "建议：1) 检查是否遗漏重要解释变量；2) 考虑使用动态模型（加入滞后项）；3) 使用Newey-West标准误"
+        elif dw_stat > 2.5:
+            conclusion = "DW统计量较大，可能存在负自相关"
+            interpretation = "残差存在负自相关，当期残差与上期残差负相关"
+            suggestion = "建议：1) 检查模型设定是否合理；2) 考虑是否存在过度差分"
+        else:
+            conclusion = "DW统计量接近2，不存在显著的一阶自相关"
+            interpretation = "残差不存在显著的序列相关性"
+            suggestion = "模型的序列相关性检验通过"
+
+        # 计算近似的一阶自相关系数
+        # ρ ≈ 1 - DW/2
+        rho = 1 - dw_stat / 2
+
+        return {
+            'test_name': 'Durbin-Watson 检验（序列相关性检验）',
+            'null_hypothesis': '不存在一阶自相关（ρ = 0）',
+            'alternative_hypothesis': '存在一阶自相关（ρ ≠ 0）',
+            'dw_statistic': round(dw_stat, decimals),
+            'rho_estimate': round(rho, decimals),
+            'conclusion': conclusion,
+            'interpretation': interpretation,
+            'suggestion': suggestion,
+            'n_obs': len(df_clean),
+            'reference': 'DW ≈ 2表示无自相关；DW < 2表示正自相关；DW > 2表示负自相关',
+            'note': note_panel if note_panel else '注意：DW检验假设残差服从正态分布且自变量非随机'
+        }

@@ -602,9 +602,225 @@ def hausman_test():
             decimals=decimals,
             sigmamore=sigmamore
         )
-        
+
         return jsonify({'result': result})
-    
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# Breusch-Pagan检验接口（异方差性检验）
+# ============================================================================
+
+@analysis_bp.route('/breusch_pagan_test', methods=['POST'])
+def breusch_pagan_test():
+    """
+    Breusch-Pagan检验接口：检验异方差性
+
+    URL: POST /breusch_pagan_test
+
+    请求体 (JSON):
+        {
+            "filename": "数据文件名",
+            "y_var": "因变量",
+            "x_vars": ["自变量列表"],
+            "decimals": 小数位数
+        }
+
+    返回:
+        成功: {"result": {...检验结果...}}
+        失败: {"error": "错误信息"}, HTTP 状态码 500
+
+    说明:
+        用于检验回归模型是否存在异方差性
+    """
+    # ------------------------------------------------------------------------
+    # 1. 解析请求参数
+    # ------------------------------------------------------------------------
+    data = request.json
+    filename = data.get('filename')
+    y_var = data.get('y_var')
+    x_vars = data.get('x_vars', [])
+    decimals = int(data.get('decimals', 4))
+
+    # ------------------------------------------------------------------------
+    # 2. 参数验证
+    # ------------------------------------------------------------------------
+    if not all([filename, y_var, x_vars]):
+        return jsonify({'error': '缺少必要参数'}), 400
+
+    # ------------------------------------------------------------------------
+    # 3. 读取数据文件
+    # ------------------------------------------------------------------------
+    file_service = get_file_service()
+
+    try:
+        df = file_service.read_datafile_by_name(filename)
+    except Exception as e:
+        return jsonify({'error': f'文件读取失败: {str(e)}'}), 500
+
+    # ------------------------------------------------------------------------
+    # 4. 执行Breusch-Pagan检验
+    # ------------------------------------------------------------------------
+    try:
+        result = ModelTests.breusch_pagan_test(
+            df=df,
+            y_var=y_var,
+            x_vars=x_vars,
+            decimals=decimals
+        )
+
+        return jsonify({'result': result})
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# White检验接口（异方差性检验）
+# ============================================================================
+
+@analysis_bp.route('/white_test', methods=['POST'])
+def white_test():
+    """
+    White检验接口：检验异方差性（更一般的形式）
+
+    URL: POST /white_test
+
+    请求体 (JSON):
+        {
+            "filename": "数据文件名",
+            "y_var": "因变量",
+            "x_vars": ["自变量列表"],
+            "decimals": 小数位数
+        }
+
+    返回:
+        成功: {"result": {...检验结果...}}
+        失败: {"error": "错误信息"}, HTTP 状态码 500
+
+    说明:
+        用于检验回归模型是否存在异方差性（比BP检验更一般）
+    """
+    # ------------------------------------------------------------------------
+    # 1. 解析请求参数
+    # ------------------------------------------------------------------------
+    data = request.json
+    filename = data.get('filename')
+    y_var = data.get('y_var')
+    x_vars = data.get('x_vars', [])
+    decimals = int(data.get('decimals', 4))
+
+    # ------------------------------------------------------------------------
+    # 2. 参数验证
+    # ------------------------------------------------------------------------
+    if not all([filename, y_var, x_vars]):
+        return jsonify({'error': '缺少必要参数'}), 400
+
+    # ------------------------------------------------------------------------
+    # 3. 读取数据文件
+    # ------------------------------------------------------------------------
+    file_service = get_file_service()
+
+    try:
+        df = file_service.read_datafile_by_name(filename)
+    except Exception as e:
+        return jsonify({'error': f'文件读取失败: {str(e)}'}), 500
+
+    # ------------------------------------------------------------------------
+    # 4. 执行White检验
+    # ------------------------------------------------------------------------
+    try:
+        result = ModelTests.white_test(
+            df=df,
+            y_var=y_var,
+            x_vars=x_vars,
+            decimals=decimals
+        )
+
+        return jsonify({'result': result})
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# Durbin-Watson检验接口（序列相关性检验）
+# ============================================================================
+
+@analysis_bp.route('/durbin_watson_test', methods=['POST'])
+def durbin_watson_test():
+    """
+    Durbin-Watson检验接口：检验一阶序列相关性
+
+    URL: POST /durbin_watson_test
+
+    请求体 (JSON):
+        {
+            "filename": "数据文件名",
+            "y_var": "因变量",
+            "x_vars": ["自变量列表"],
+            "time_col": "时间列（可选）",
+            "entity_col": "个体列（可选，面板数据）",
+            "decimals": 小数位数
+        }
+
+    返回:
+        成功: {"result": {...检验结果...}}
+        失败: {"error": "错误信息"}, HTTP 状态码 500
+
+    说明:
+        用于检验回归模型的残差是否存在序列相关性
+    """
+    # ------------------------------------------------------------------------
+    # 1. 解析请求参数
+    # ------------------------------------------------------------------------
+    data = request.json
+    filename = data.get('filename')
+    y_var = data.get('y_var')
+    x_vars = data.get('x_vars', [])
+    time_col = data.get('time_col')
+    entity_col = data.get('entity_col')
+    decimals = int(data.get('decimals', 4))
+
+    # ------------------------------------------------------------------------
+    # 2. 参数验证
+    # ------------------------------------------------------------------------
+    if not all([filename, y_var, x_vars]):
+        return jsonify({'error': '缺少必要参数'}), 400
+
+    # ------------------------------------------------------------------------
+    # 3. 读取数据文件
+    # ------------------------------------------------------------------------
+    file_service = get_file_service()
+
+    try:
+        df = file_service.read_datafile_by_name(filename)
+    except Exception as e:
+        return jsonify({'error': f'文件读取失败: {str(e)}'}), 500
+
+    # ------------------------------------------------------------------------
+    # 4. 执行Durbin-Watson检验
+    # ------------------------------------------------------------------------
+    try:
+        result = ModelTests.durbin_watson_test(
+            df=df,
+            y_var=y_var,
+            x_vars=x_vars,
+            time_col=time_col,
+            entity_col=entity_col,
+            decimals=decimals
+        )
+
+        return jsonify({'result': result})
+
     except Exception as e:
         import traceback
         traceback.print_exc()

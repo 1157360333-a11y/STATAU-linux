@@ -1,4 +1,4 @@
-<!-- 模型检验模块 (F检验 & Hausman检验) -->
+<!-- 模型检验模块 (F检验、Hausman检验、BP检验、White检验、DW检验) -->
 <div id="module-test" class="analysis-module">
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -8,7 +8,19 @@
             <button class="btn btn-sm btn-light" onclick="toggleModulePanel('test')">折叠/展开</button>
         </div>
         <div class="card-body" id="test-config-body">
-            
+
+            <!-- 检验方法选择 -->
+            <div class="mb-3">
+                <label class="small fw-bold">选择检验方法 <span class="text-danger">*</span></label>
+                <select id="test-method-select" class="form-select form-select-sm" onchange="onTestMethodChange()">
+                    <option value="f_test">F检验 (固定效应 vs 混合OLS)</option>
+                    <option value="hausman">Hausman检验 (固定效应 vs 随机效应)</option>
+                    <option value="breusch_pagan">Breusch-Pagan检验 (异方差性)</option>
+                    <option value="white">White检验 (异方差性)</option>
+                    <option value="durbin_watson">Durbin-Watson检验 (序列相关性)</option>
+                </select>
+            </div>
+
             <!-- 变量选择区域 -->
             <div class="row g-3 mb-3">
                 <div class="col-md-12">
@@ -28,18 +40,21 @@
                 </div>
             </div>
 
-            <!-- 面板数据设置（必须） -->
-            <div class="mt-3 p-3 bg-light rounded border">
-                <h6 class="fw-bold small text-primary"><i class="bi bi-layers"></i> 面板结构设置</h6>
+            <!-- 面板数据设置（F检验和Hausman检验必须，DW检验可选） -->
+            <div id="test-panel-settings" class="mt-3 p-3 bg-light rounded border">
+                <h6 class="fw-bold small text-primary"><i class="bi bi-layers"></i> 面板结构设置 <span id="test-panel-required" class="text-danger">*</span></h6>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="small fw-bold">个体ID (Entity) <span class="text-danger">*</span></label>
+                        <label class="small fw-bold">个体ID (Entity) <span id="test-entity-required" class="text-danger">*</span></label>
                         <select id="test-entity-select" class="form-select form-select-sm"></select>
                     </div>
                     <div class="col-md-6">
-                        <label class="small fw-bold">时间ID (Time) <span class="text-danger">*</span></label>
+                        <label class="small fw-bold">时间ID (Time) <span id="test-time-required" class="text-danger">*</span></label>
                         <select id="test-time-select" class="form-select form-select-sm"></select>
                     </div>
+                </div>
+                <div class="form-text small mt-2" id="test-panel-note">
+                    面板数据检验需要指定个体和时间标识
                 </div>
             </div>
 
@@ -126,7 +141,7 @@ function initTestModule(columns) {
         el.innerHTML = '<option value="">请选择...</option>';
         columns.forEach(col => el.add(new Option(col, col)));
     });
-    
+
     // 填充复选框列表
     const fillContainer = (id, cls) => {
         const con = document.getElementById(id);
@@ -140,30 +155,71 @@ function initTestModule(columns) {
             `;
         });
     };
-    
+
     fillContainer('test-x-var-container', 'test-x-box');
     fillContainer('test-c-var-container', 'test-c-box');
+
+    // 初始化检验方法
+    onTestMethodChange();
+}
+
+function onTestMethodChange() {
+    const method = document.getElementById('test-method-select').value;
+    testCurrentMethod = method;
+
+    const titleMap = {
+        'f_test': '🔬 F检验配置 (固定效应 vs 混合OLS)',
+        'hausman': '🧪 Hausman检验配置 (固定效应 vs 随机效应)',
+        'breusch_pagan': '📊 Breusch-Pagan检验配置 (异方差性)',
+        'white': '📈 White检验配置 (异方差性)',
+        'durbin_watson': '📉 Durbin-Watson检验配置 (序列相关性)'
+    };
+
+    document.getElementById('test-method-title').innerText = titleMap[method] || '模型检验配置';
+
+    // 根据检验方法显示/隐藏相关设置
+    const panelSettings = document.getElementById('test-panel-settings');
+    const hausmanSettings = document.getElementById('test-hausman-settings');
+    const panelRequired = document.getElementById('test-panel-required');
+    const entityRequired = document.getElementById('test-entity-required');
+    const timeRequired = document.getElementById('test-time-required');
+    const panelNote = document.getElementById('test-panel-note');
+
+    // Hausman检验特定设置
+    hausmanSettings.style.display = (method === 'hausman') ? 'block' : 'none';
+
+    // 面板数据设置的显示和必填状态
+    if (method === 'f_test' || method === 'hausman') {
+        // F检验和Hausman检验必须有面板数据
+        panelSettings.style.display = 'block';
+        panelRequired.style.display = 'inline';
+        entityRequired.style.display = 'inline';
+        timeRequired.style.display = 'inline';
+        panelNote.innerText = '面板数据检验需要指定个体和时间标识';
+    } else if (method === 'durbin_watson') {
+        // DW检验面板数据可选
+        panelSettings.style.display = 'block';
+        panelRequired.style.display = 'none';
+        entityRequired.style.display = 'none';
+        timeRequired.style.display = 'none';
+        panelNote.innerText = '可选：如果是面板数据，建议指定个体和时间标识以获得更准确的结果';
+    } else {
+        // BP检验和White检验不需要面板数据
+        panelSettings.style.display = 'none';
+    }
 }
 
 function setTestMethod(method) {
-    testCurrentMethod = method;
-    
-    const titleMap = {
-        'f_test': '🔬 F检验配置 (固定效应 vs 混合OLS)',
-        'hausman': '🧪 Hausman检验配置 (固定效应 vs 随机效应)'
-    };
-    
-    document.getElementById('test-method-title').innerText = titleMap[method] || '模型检验配置';
-    
-    // Hausman检验显示特定设置
-    document.getElementById('test-hausman-settings').style.display = (method === 'hausman') ? 'block' : 'none';
+    document.getElementById('test-method-select').value = method;
+    onTestMethodChange();
 }
 
 function runModelTest() {
     const btn = document.getElementById('btn-test-run');
     const spinner = btn.querySelector('.spinner-border');
-    
+
     // 收集变量
+    const method = document.getElementById('test-method-select').value;
     const y_var = document.getElementById('test-y-var-select').value;
     const xVars = Array.from(document.querySelectorAll('.test-x-box:checked')).map(e => e.value);
     const cVars = Array.from(document.querySelectorAll('.test-c-box:checked')).map(e => e.value);
@@ -171,14 +227,14 @@ function runModelTest() {
     const panel_entity = document.getElementById('test-entity-select').value;
     const panel_time = document.getElementById('test-time-select').value;
     const decimals = document.getElementById('test-decimal-input').value;
-    
+
     // 处理手动输入的控制变量
     let allXVars = xVars.concat(cVars);
     if (manual) {
         const manualVars = manual.split(/[\s,]+/).filter(v => v.trim() !== '');
         allXVars = allXVars.concat(manualVars);
     }
-    
+
     // 校验
     if (!y_var) {
         alert("请选择因变量 Y");
@@ -188,30 +244,51 @@ function runModelTest() {
         alert("请至少选择一个自变量或控制变量");
         return;
     }
-    if (!panel_entity || !panel_time) {
-        alert("模型检验必须设置 Entity 和 Time ID");
-        return;
+
+    // 根据检验方法进行不同的校验
+    if (method === 'f_test' || method === 'hausman') {
+        if (!panel_entity || !panel_time) {
+            alert("F检验和Hausman检验必须设置 Entity 和 Time ID");
+            return;
+        }
     }
-    
+
     const payload = {
         filename: window.currentFilename,
         y_var: y_var,
         x_vars: allXVars,
-        panel_entity: panel_entity,
-        panel_time: panel_time,
         decimals: decimals
     };
-    
+
+    // 添加面板数据参数（如果有）
+    if (panel_entity) payload.entity_col = panel_entity;
+    if (panel_time) payload.time_col = panel_time;
+
+    // F检验和Hausman检验需要特殊参数
+    if (method === 'f_test' || method === 'hausman') {
+        payload.panel_entity = panel_entity;
+        payload.panel_time = panel_time;
+    }
+
     // Hausman检验特有参数
-    if (testCurrentMethod === 'hausman') {
+    if (method === 'hausman') {
         payload.sigmamore = document.getElementById('test-sigmamore-checkbox').checked;
     }
-    
+
     btn.disabled = true;
     spinner.classList.remove('d-none');
-    
-    const endpoint = testCurrentMethod === 'f_test' ? '/f_test' : '/hausman_test';
-    
+
+    // 根据检验方法选择不同的端点
+    const endpointMap = {
+        'f_test': '/f_test',
+        'hausman': '/hausman_test',
+        'breusch_pagan': '/breusch_pagan_test',
+        'white': '/white_test',
+        'durbin_watson': '/durbin_watson_test'
+    };
+
+    const endpoint = endpointMap[method];
+
     fetch(endpoint, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -222,7 +299,7 @@ function runModelTest() {
         if (data.error) {
             alert("检验错误: " + data.error);
         } else {
-            displayTestResult(data.result, testCurrentMethod);
+            displayTestResult(data.result, method);
             document.getElementById('test-result-container').style.display = 'block';
             toggleModulePanel('test', false);
         }
@@ -236,12 +313,12 @@ function runModelTest() {
 
 function displayTestResult(result, testType) {
     let html = '<div class="card shadow-sm"><div class="card-body">';
-    
+
     if (result.error) {
         html += `<div class="alert alert-warning"><strong>注意：</strong>${result.error}</div>`;
         html += `<p class="text-muted">${result.suggestion || ''}</p>`;
-        
-        // 即使有错误，也显示系数对比
+
+        // 即使有错误，也显示系数对比（Hausman检验）
         if (result.fe_coeffs && result.re_coeffs) {
             html += '<h6 class="mt-3">系数对比：</h6>';
             html += '<div class="table-responsive">';
@@ -261,23 +338,25 @@ function displayTestResult(result, testType) {
         }
     } else {
         html += `<h5 class="text-primary mb-3">${result.test_name}</h5>`;
-        
-        // 假设检验
-        html += '<div class="row mb-3">';
-        html += '<div class="col-md-6">';
-        html += `<p><strong>原假设 (H₀)：</strong><br>${result.null_hypothesis}</p>`;
-        html += '</div>';
-        html += '<div class="col-md-6">';
-        html += `<p><strong>备择假设 (H₁)：</strong><br>${result.alternative_hypothesis}</p>`;
-        html += '</div>';
-        html += '</div>';
-        
+
+        // 假设检验（如果有）
+        if (result.null_hypothesis) {
+            html += '<div class="row mb-3">';
+            html += '<div class="col-md-6">';
+            html += `<p><strong>原假设 (H₀)：</strong><br>${result.null_hypothesis}</p>`;
+            html += '</div>';
+            html += '<div class="col-md-6">';
+            html += `<p><strong>备择假设 (H₁)：</strong><br>${result.alternative_hypothesis}</p>`;
+            html += '</div>';
+            html += '</div>';
+        }
+
         // 检验统计量
         html += '<div class="table-responsive mb-3">';
         html += '<table class="table table-bordered table-sm">';
         html += '<thead class="table-light"><tr><th>统计量</th><th>值</th></tr></thead>';
         html += '<tbody>';
-        
+
         if (testType === 'f_test') {
             html += `<tr><td>F统计量</td><td>${result.f_statistic}${result.significance}</td></tr>`;
             html += `<tr><td>自由度 (df1, df2)</td><td>(${result.df1}, ${result.df2})</td></tr>`;
@@ -286,22 +365,68 @@ function displayTestResult(result, testType) {
             html += `<tr><td>RSS (Fixed Effects)</td><td>${result.rss_fe}</td></tr>`;
             html += `<tr><td>个体数量</td><td>${result.n_entities}</td></tr>`;
             html += `<tr><td>观测数量</td><td>${result.n_obs}</td></tr>`;
-        } else {
+        } else if (testType === 'hausman') {
             html += `<tr><td>卡方统计量 (χ²)</td><td>${result.chi2_statistic}${result.significance}</td></tr>`;
             html += `<tr><td>自由度 (df)</td><td>${result.df}</td></tr>`;
             html += `<tr><td>P值</td><td>${result.p_value}</td></tr>`;
+        } else if (testType === 'breusch_pagan') {
+            html += `<tr><td>BP统计量</td><td>${result.bp_statistic}${result.significance}</td></tr>`;
+            html += `<tr><td>自由度 (df)</td><td>${result.df}</td></tr>`;
+            html += `<tr><td>P值</td><td>${result.p_value}</td></tr>`;
+            html += `<tr><td>辅助回归R²</td><td>${result.aux_r_squared}</td></tr>`;
+            html += `<tr><td>观测数量</td><td>${result.n_obs}</td></tr>`;
+        } else if (testType === 'white') {
+            html += `<tr><td>White统计量</td><td>${result.white_statistic}${result.significance}</td></tr>`;
+            html += `<tr><td>自由度 (df)</td><td>${result.df}</td></tr>`;
+            html += `<tr><td>P值</td><td>${result.p_value}</td></tr>`;
+            html += `<tr><td>辅助回归R²</td><td>${result.aux_r_squared}</td></tr>`;
+            html += `<tr><td>辅助回归变量数</td><td>${result.n_aux_vars}</td></tr>`;
+            html += `<tr><td>观测数量</td><td>${result.n_obs}</td></tr>`;
+        } else if (testType === 'durbin_watson') {
+            html += `<tr><td>DW统计量</td><td>${result.dw_statistic}</td></tr>`;
+            html += `<tr><td>估计的一阶自相关系数 (ρ)</td><td>${result.rho_estimate}</td></tr>`;
+            html += `<tr><td>观测数量</td><td>${result.n_obs}</td></tr>`;
         }
-        
+
         html += '</tbody></table></div>';
-        
+
         // 结论
-        html += `<div class="alert alert-${result.p_value < 0.05 ? 'success' : 'info'}">`;
-        html += `<strong>结论：</strong>${result.conclusion}`;
-        html += '</div>';
-        
-        // 显著性说明
-        html += '<p class="text-muted small">*** p<0.01, ** p<0.05, * p<0.1</p>';
-        
+        if (result.conclusion) {
+            const alertClass = (testType === 'durbin_watson') ? 'info' :
+                              (result.p_value && result.p_value < 0.05 ? 'success' : 'info');
+            html += `<div class="alert alert-${alertClass}">`;
+            html += `<strong>结论：</strong>${result.conclusion}`;
+            html += '</div>';
+        }
+
+        // 解释和建议（DW检验）
+        if (result.interpretation) {
+            html += `<div class="alert alert-light">`;
+            html += `<strong>解释：</strong>${result.interpretation}`;
+            html += '</div>';
+        }
+
+        if (result.suggestion) {
+            html += `<div class="alert alert-light">`;
+            html += `<strong>建议：</strong>${result.suggestion}`;
+            html += '</div>';
+        }
+
+        // 显著性说明（如果有p值）
+        if (result.p_value && result.p_value !== 'N/A') {
+            html += '<p class="text-muted small">*** p<0.01, ** p<0.05, * p<0.1</p>';
+        }
+
+        // 参考信息
+        if (result.reference) {
+            html += `<p class="text-muted small"><strong>参考：</strong>${result.reference}</p>`;
+        }
+
+        // 注释
+        if (result.note) {
+            html += `<p class="text-muted small"><strong>注：</strong>${result.note}</p>`;
+        }
+
         // Hausman检验显示详细系数对比
         if (testType === 'hausman' && result.fe_coeffs && result.re_coeffs) {
             html += '<h6 class="mt-3">系数对比（Coefficients）：</h6>';
@@ -327,7 +452,7 @@ function displayTestResult(result, testType) {
             html += 'B = Inconsistent under Ha, efficient under H0 (随机效应估计)</p>';
         }
     }
-    
+
     html += '</div></div>';
     document.getElementById('test-table-output').innerHTML = html;
 }
