@@ -866,48 +866,53 @@ class StataModel:
     ) -> Any:
         """
         执行固定效应回归
-        
+
         参数:
             df: 清洗后的数据框
             entity_col: 个体标识列
             time_col: 时间标识列
-        
+
         返回:
             PanelOLS 拟合结果
         """
         if not entity_col or not time_col:
             raise ValueError("FE Model needs Entity and Time ID")
-        
-        # 剔除 singleton
-        df = drop_singletons_func(df, entity_col)
-        
+
+        # 剔除 singleton：只有当固定效应包含个体变量时才剔除
+        # 这样可以避免在使用行业固定效应等情况下错误地剔除单个企业
+        if entity_col in self.fe_vars:
+            df = drop_singletons_func(df, entity_col)
+
         # 设置面板索引
         df_panel = df.set_index([entity_col, time_col])
         y = df_panel[self.y_var]
-        
-        # 准备自变量
+
+        # 准备自变量（添加常数项以复刻Stata的常数项计算）
         exog_cols = [v for v in self.x_vars if v != self.y_var]
         if not exog_cols:
             df_panel['const'] = 1
             x = df_panel[['const']]
         else:
-            x = df_panel[exog_cols]
+            # 手动添加常数项，确保返回DataFrame类型
+            x = df_panel[exog_cols].copy()
+            x.insert(0, 'const', 1.0)
         
         # 配置固定效应
         entity_effects = False
         time_effects = False
-        other_effects = {}
-        
+        other_effects = None
+
         for fe in self.fe_vars:
             if fe == entity_col:
                 entity_effects = True
             elif fe == time_col:
                 time_effects = True
             else:
-                other_effects[fe] = df_panel[fe].astype('category')
-        
-        if not other_effects:
-            other_effects = None
+                # 其他固定效应变量需要作为 DataFrame 传递
+                if other_effects is None:
+                    other_effects = df_panel[[fe]].astype('category')
+                else:
+                    other_effects[fe] = df_panel[fe].astype('category')
         
         # 创建模型
         mod = PanelOLS(
@@ -1275,15 +1280,15 @@ class StataModel:
         params = self.result.params
         std_errors = self.result.std_errors
         pvalues = self.result.pvalues
-        
+
         formatted_series = {}
         for var in params.index:
-            if var in ('const', 'Intercept'):
-                continue
-            
+            # 将常数项重命名为Constant以保持一致性
+            display_var = 'Constant' if var in ('const', 'Intercept') else var
+
             coef = params[var]
             p_val = pvalues[var]
-            
+
             # 显著性星号
             if p_val < 0.01:
                 stars = "***"
@@ -1293,11 +1298,11 @@ class StataModel:
                 stars = "*"
             else:
                 stars = ""
-            
+
             coef_str = f"{coef:.{decimals}f}{stars}"
             val = std_errors[var] if show_se else self.result.tstats[var]
-            formatted_series[var] = (coef_str, f"({val:.{decimals}f})")
-        
+            formatted_series[display_var] = (coef_str, f"({val:.{decimals}f})")
+
         return formatted_series, self.model_stats
     
     def _get_standard_coeffs(
