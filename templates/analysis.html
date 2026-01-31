@@ -62,6 +62,11 @@
         position: relative;
     }
 
+    /* 隐藏右侧内容区滚动条 */
+    .content-area::-webkit-scrollbar {
+        width: 0px;
+    }
+
     /* 变量列表容器 */
     .var-list-container {
         border: 1px solid var(--border-color);
@@ -245,6 +250,37 @@
     /* 隐藏侧边栏滚动条样式 */
     #sidebar::-webkit-scrollbar {
         width: 0px;
+    }
+
+    /* Accordion手风琴样式 */
+    .accordion-item {
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border-color) !important;
+    }
+
+    .accordion-button {
+        background: var(--bg-tertiary) !important;
+        color: var(--text-primary) !important;
+        border: none !important;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background: var(--bg-elevated) !important;
+        color: var(--accent-primary) !important;
+        box-shadow: none !important;
+    }
+
+    .accordion-button:focus {
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1) !important;
+    }
+
+    .accordion-button::after {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+    .accordion-body {
+        background: var(--bg-secondary) !important;
+        color: var(--text-secondary) !important;
     }
 </style>
 {% endblock %}
